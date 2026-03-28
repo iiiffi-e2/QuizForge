@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+:root {
+  --quiz-primary: #4f46e5;
+  --quiz-secondary: #6366f1;
+  --quiz-background: #f8fafc;
+  --quiz-card: #ffffff;
+  --quiz-text-primary: #0f172a;
+  --quiz-text-secondary: #475569;
+  --quiz-muted: #94a3b8;
+  --quiz-border: #e2e8f0;
+  --quiz-success: #16a34a;
+  --quiz-error: #dc2626;
+}
+
+@theme inline {
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: var(--quiz-background);
+  color: var(--quiz-text-primary);
+  font-family: var(--font-inter), sans-serif;
+}
