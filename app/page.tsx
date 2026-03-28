@@ -7,6 +7,7 @@ import { SettingsPanel } from "@/components/SettingsPanel";
 import { DEFAULT_REQUEST } from "@/lib/constants";
 import { generateQuizFromApi } from "@/lib/api-client";
 import {
+  hasQuizSourceContent,
   loadRequestDraft,
   saveQuizSession,
   saveRequestDraft,
@@ -44,9 +45,10 @@ export default function HomePage() {
     saveRequestDraft(request);
   }, [request]);
 
-  const canGenerate = useMemo(() => {
-    return request.content.trim().length > 0;
-  }, [request.content]);
+  const canGenerate = useMemo(
+    () => hasQuizSourceContent(request),
+    [request.content, request.input_type],
+  );
 
   const setInputType = (nextType: QuizInputType) => {
     setError(null);
@@ -91,6 +93,17 @@ export default function HomePage() {
   const validateRequest = (): string | null => {
     if (!request.content.trim()) {
       return "Please provide source material before generating a quiz.";
+    }
+
+    if (request.input_type === "file" || request.input_type === "image") {
+      try {
+        const parsed = JSON.parse(request.content) as { dataUrl?: string };
+        if (!parsed.dataUrl?.trim()) {
+          return "File data is not available (e.g. storage limit). Upload the file again to generate.";
+        }
+      } catch {
+        return "Please provide source material before generating a quiz.";
+      }
     }
 
     if (request.input_type === "url") {
