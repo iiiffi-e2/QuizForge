@@ -1,3 +1,4 @@
+import "@/lib/pdf-dom-polyfill";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
