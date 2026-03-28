@@ -16,6 +16,7 @@ import {
   saveRequestDraft,
   saveUserAnswers,
 } from "@/lib/quiz-storage";
+import { encodeQuizToUrl } from "@/lib/share";
 import { QuizSession } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -28,6 +29,7 @@ export default function ResultsPage() {
   );
   const [error, setError] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!session || session.quiz.questions.length === 0) {
@@ -93,7 +95,7 @@ export default function ResultsPage() {
     <div className="min-h-screen bg-[var(--quiz-background)]">
       <Navbar />
       <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
-        <header className="rounded-2xl border border-[var(--quiz-border)] bg-white p-5 shadow-sm sm:p-7">
+        <header className="rounded-2xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] p-5 shadow-sm sm:p-7">
           <h1 className="text-2xl font-bold text-[var(--quiz-text-primary)] sm:text-3xl">
             You scored {score}/{session.quiz.questions.length}
           </h1>
@@ -101,7 +103,7 @@ export default function ResultsPage() {
             Review each question below and regenerate with one click.
           </p>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="mt-5 flex flex-wrap gap-3 no-print">
             <button
               type="button"
               onClick={() => regenerate("same")}
@@ -114,7 +116,7 @@ export default function ResultsPage() {
               type="button"
               onClick={() => regenerate("harder")}
               disabled={isRegenerating}
-              className="rounded-xl border border-[var(--quiz-border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+              className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2.5 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-70"
             >
               Make Harder
             </button>
@@ -122,9 +124,30 @@ export default function ResultsPage() {
               type="button"
               onClick={() => regenerate("easier")}
               disabled={isRegenerating}
-              className="rounded-xl border border-[var(--quiz-border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+              className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2.5 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-70"
             >
               Make Easier
+            </button>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2.5 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80"
+            >
+              Print
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!session) return;
+                const url = encodeQuizToUrl(session);
+                navigator.clipboard.writeText(url).then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                });
+              }}
+              className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2.5 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80"
+            >
+              {copied ? "Copied!" : "Copy Link"}
             </button>
           </div>
 

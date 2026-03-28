@@ -4,6 +4,7 @@ import {
   MODES,
   QUESTION_COUNTS,
   SOURCE_BEHAVIORS,
+  TIME_LIMITS,
 } from "@/lib/constants";
 import { QuizSettings, QuizMode } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -36,7 +37,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
                 Number(event.target.value) as QuizSettings["question_count"],
               )
             }
-            className="rounded-xl border border-[var(--quiz-border)] bg-white px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none"
+            className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none"
           >
             {QUESTION_COUNTS.map((count) => (
               <option key={count} value={count}>
@@ -53,7 +54,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
             onChange={(event) =>
               update("difficulty", event.target.value as QuizSettings["difficulty"])
             }
-            className="rounded-xl border border-[var(--quiz-border)] bg-white px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none"
+            className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none"
           >
             {DIFFICULTIES.map((difficulty) => (
               <option key={difficulty.value} value={difficulty.value}>
@@ -68,7 +69,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
           <select
             value={settings.level}
             onChange={(event) => update("level", event.target.value as QuizSettings["level"])}
-            className="rounded-xl border border-[var(--quiz-border)] bg-white px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none"
+            className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none"
           >
             {LEVELS.map((level) => (
               <option key={level.value} value={level.value}>
@@ -78,9 +79,27 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
           </select>
         </label>
 
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="font-medium text-[var(--quiz-text-secondary)]">Time Limit</span>
+          <select
+            value={settings.time_limit_seconds ?? ""}
+            onChange={(event) => {
+              const val = event.target.value;
+              update("time_limit_seconds", val === "" ? null : Number(val));
+            }}
+            className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none"
+          >
+            {TIME_LIMITS.map((tl) => (
+              <option key={tl.label} value={tl.value ?? ""}>
+                {tl.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <div className="flex flex-col gap-1.5 text-sm">
           <span className="font-medium text-[var(--quiz-text-secondary)]">Mode</span>
-          <div className="inline-flex w-fit rounded-xl border border-[var(--quiz-border)] bg-white p-1">
+          <div className="inline-flex w-fit rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] p-1">
             {MODES.map((mode) => (
               <button
                 key={mode.value}
@@ -90,7 +109,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
                   "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
                   settings.mode === mode.value
                     ? "bg-[var(--quiz-primary)] text-white"
-                    : "text-[var(--quiz-text-secondary)] hover:bg-slate-100",
+                    : "text-[var(--quiz-text-secondary)] hover:opacity-80",
                 )}
               >
                 {mode.label}
@@ -108,7 +127,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
           {SOURCE_BEHAVIORS.map((behavior) => (
             <label
               key={behavior.value}
-              className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--quiz-border)] bg-white px-3 py-2.5"
+              className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-3 py-2.5"
             >
               <input
                 type="radio"
