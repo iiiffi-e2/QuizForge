@@ -78,6 +78,30 @@ const QUIZ_SCHEMA = {
   },
 } as const;
 
+const IMAGE_EXTRACTION_SCHEMA = {
+  name: "image_extraction",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "main_subject",
+      "visual_description",
+      "readable_text",
+      "notable_details",
+    ],
+    properties: {
+      main_subject: { type: "string" },
+      visual_description: { type: "string" },
+      readable_text: { type: "string" },
+      notable_details: {
+        type: "array",
+        items: { type: "string" },
+      },
+    },
+  },
+} as const;
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Partial<QuizGenerationRequest>;
@@ -282,14 +306,14 @@ async function extractFromImagePayload(content: string): Promise<string> {
       {
         role: "system",
         content:
-          "You extract clear, faithful text from images. Return only plain extracted text.",
+          "You analyze images for educational quiz generation. Identify the main subject and describe what is visibly present. Transcribe readable text faithfully. List concrete, testable details visible in the image. Do not invent text you cannot read or facts not supported by the image.",
       },
       {
         role: "user",
         content: [
           {
             type: "text",
-            text: "Extract all readable text from this image for educational quiz generation.",
+            text: "Fill the schema: main subject (primary focus), visual description (scene, objects, activities, relationships), readable text (OCR; empty string if none), notable details (short factual bullets inferable from what is visible).",
           },
           {
             type: "image_url",
@@ -300,10 +324,69 @@ async function extractFromImagePayload(content: string): Promise<string> {
         ],
       },
     ],
+    response_format: {
+      type: "json_schema",
+      json_schema: IMAGE_EXTRACTION_SCHEMA,
+    },
   });
 
-  const extracted = response.choices[0]?.message?.content ?? "";
-  return normalizeText(extracted);
+  const raw = response.choices[0]?.message?.content ?? "";
+  if (!raw.trim()) {
+    throw new Error("Model returned an empty image analysis.");
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("Image analysis was not valid JSON.");
+  }
+
+  return normalizeText(formatImageExtractionMaterial(parsed));
+}
+
+function formatImageExtractionMaterial(payload: unknown): string {
+  const data = validateImageExtractionPayload(payload);
+  const lines: string[] = [];
+  if (data.main_subject) {
+    lines.push(`MAIN SUBJECT: ${data.main_subject}`);
+  }
+  if (data.visual_description) {
+    lines.push(`VISUAL DESCRIPTION: ${data.visual_description}`);
+  }
+  if (data.readable_text.trim()) {
+    lines.push(`READABLE TEXT: ${data.readable_text}`);
+  }
+  if (data.notable_details.length > 0) {
+    lines.push(
+      "NOTABLE DETAILS:",
+      ...data.notable_details.map((d) => `- ${d}`),
+    );
+  }
+  return lines.join("\n");
+}
+
+function validateImageExtractionPayload(payload: unknown): {
+  main_subject: string;
+  visual_description: string;
+  readable_text: string;
+  notable_details: string[];
+} {
+  if (typeof payload !== "object" || payload === null) {
+    throw new Error("Invalid image extraction payload.");
+  }
+  const o = payload as Record<string, unknown>;
+  const main_subject = normalizeText(String(o.main_subject ?? ""));
+  const visual_description = normalizeText(String(o.visual_description ?? ""));
+  const readable_text = normalizeText(String(o.readable_text ?? ""));
+  const rawDetails = o.notable_details;
+  const notable_details = Array.isArray(rawDetails)
+    ? rawDetails.map((d) => normalizeText(String(d))).filter(Boolean)
+    : [];
+  if (!main_subject && !visual_description && !readable_text && notable_details.length === 0) {
+    throw new Error("Image analysis contained no usable content.");
+  }
+  return { main_subject, visual_description, readable_text, notable_details };
 }
 
 function dataUrlToBuffer(dataUrl: string): Buffer {
@@ -370,7 +453,7 @@ async function generateQuiz(
 
   const client = new OpenAI({ apiKey });
 
-  const instructions = [
+  const instructionLines = [
     "You create high-quality educational multiple-choice quizzes.",
     "Follow all rules exactly.",
     "Return JSON only matching the required schema.",
@@ -385,7 +468,14 @@ async function generateQuiz(
     request.settings.source_behavior === "material_only"
       ? "- Use ONLY the provided material for facts."
       : "- You may expand with general knowledge when useful.",
-  ].join("\n");
+  ];
+  if (request.input_type === "image") {
+    instructionLines.push(
+      "- When input_type is image: prioritize questions about the MAIN SUBJECT and the overall scene described under VISUAL DESCRIPTION and NOTABLE DETAILS.",
+      "- When READABLE TEXT is present, include questions grounded in that text alongside visual-content questions; when it is absent or minimal, rely on the visual description.",
+    );
+  }
+  const instructions = instructionLines.join("\n");
 
   const prompt = [
     `input_type: ${request.input_type}`,
