@@ -67,6 +67,17 @@ export function loadUserAnswers(expectedCount: number): number[] {
   }
 }
 
+export function saveTheme(theme: "light" | "dark"): void {
+  if (!hasLocalStorage()) return;
+  localStorage.setItem(STORAGE_KEYS.THEME, theme);
+}
+
+export function loadTheme(): "light" | "dark" {
+  if (!hasLocalStorage()) return "light";
+  const raw = localStorage.getItem(STORAGE_KEYS.THEME);
+  return raw === "dark" ? "dark" : "light";
+}
+
 function hasLocalStorage(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 }

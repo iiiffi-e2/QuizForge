@@ -38,7 +38,7 @@ export function AnswerOption({
         !isCorrect &&
           !isIncorrect &&
           !isSelected &&
-          "border-[var(--quiz-border)] bg-white text-[var(--quiz-text-primary)] hover:bg-slate-50",
+          "border-[var(--quiz-border)] bg-[var(--quiz-card)] text-[var(--quiz-text-primary)] hover:opacity-80",
       )}
     >
       <span className="mr-3 inline-flex h-6 w-6 items-center justify-center rounded-full border border-current text-xs font-semibold">
