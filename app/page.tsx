@@ -20,17 +20,25 @@ type LoadingStage = "extracting" | "generating";
 
 export default function HomePage() {
   const router = useRouter();
-  const [request, setRequest] = useState<QuizGenerationRequest>(DEFAULT_REQUEST);
+  const [request, setRequest] = useState<QuizGenerationRequest>(() => {
+    if (typeof window === "undefined") {
+      return {
+        ...DEFAULT_REQUEST,
+        settings: { ...DEFAULT_REQUEST.settings },
+      };
+    }
+
+    const stored = loadRequestDraft();
+    if (stored) return stored;
+
+    return {
+      ...DEFAULT_REQUEST,
+      settings: { ...DEFAULT_REQUEST.settings },
+    };
+  });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState<LoadingStage>("extracting");
-
-  useEffect(() => {
-    const stored = loadRequestDraft();
-    if (stored) {
-      setRequest(stored);
-    }
-  }, []);
 
   useEffect(() => {
     saveRequestDraft(request);
@@ -86,10 +94,7 @@ export default function HomePage() {
     }
 
     if (request.input_type === "url") {
-      try {
-        // eslint-disable-next-line no-new
-        new URL(request.content);
-      } catch {
+      if (!URL.canParse(request.content)) {
         return "Please provide a valid URL.";
       }
     }

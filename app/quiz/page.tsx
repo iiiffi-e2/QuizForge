@@ -11,20 +11,17 @@ import { useEffect, useMemo, useState } from "react";
 
 export default function QuizPage() {
   const router = useRouter();
-  const [session, setSession] = useState<QuizSession | null>(null);
+  const [session] = useState<QuizSession | null>(() => loadQuizSession());
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<number[]>([]);
+  const [answers, setAnswers] = useState<number[]>(() =>
+    session ? loadUserAnswers(session.quiz.questions.length) : [],
+  );
 
   useEffect(() => {
-    const stored = loadQuizSession();
-    if (!stored || stored.quiz.questions.length === 0) {
+    if (!session || session.quiz.questions.length === 0) {
       router.replace("/");
-      return;
     }
-
-    setSession(stored);
-    setAnswers(loadUserAnswers(stored.quiz.questions.length));
-  }, [router]);
+  }, [router, session]);
 
   const progress = useMemo(() => {
     if (!session) return 0;

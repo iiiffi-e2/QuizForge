@@ -22,21 +22,18 @@ import { useEffect, useMemo, useState } from "react";
 
 export default function ResultsPage() {
   const router = useRouter();
-  const [session, setSession] = useState<QuizSession | null>(null);
-  const [answers, setAnswers] = useState<number[]>([]);
+  const [session] = useState<QuizSession | null>(() => loadQuizSession());
+  const [answers] = useState<number[]>(() =>
+    session ? loadUserAnswers(session.quiz.questions.length) : [],
+  );
   const [error, setError] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
 
   useEffect(() => {
-    const stored = loadQuizSession();
-    if (!stored || stored.quiz.questions.length === 0) {
+    if (!session || session.quiz.questions.length === 0) {
       router.replace("/");
-      return;
     }
-
-    setSession(stored);
-    setAnswers(loadUserAnswers(stored.quiz.questions.length));
-  }, [router]);
+  }, [router, session]);
 
   const score = useMemo(() => {
     if (!session) return 0;
