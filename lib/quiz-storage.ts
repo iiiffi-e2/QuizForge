@@ -1,6 +1,7 @@
 "use client";
 
 import { STORAGE_KEYS } from "@/lib/constants";
+import { slimQuizRequest } from "@/lib/slim-quiz-request";
 import { QuizGenerationRequest, QuizSession } from "@/lib/types";
 
 export type QuizImagePreview = {
@@ -10,9 +11,6 @@ export type QuizImagePreview = {
 
 /** Stay under typical ~5MB localStorage limits; large entries fail before setItem too. */
 const MAX_LOCAL_STORAGE_CHARS = 4_000_000;
-/** Truncate pasted text when persisting so drafts still fit after slimming. */
-const MAX_TEXT_CONTENT_CHARS = 350_000;
-
 function isQuotaExceeded(error: unknown): boolean {
   return (
     error instanceof DOMException &&
@@ -36,33 +34,16 @@ export function hasQuizSourceContent(request: QuizGenerationRequest): boolean {
   return true;
 }
 
+/**
+ * Removes embedded file/image data URLs from the request. Use before encoding a
+ * quiz into a URL so shared links stay within browser and server limits.
+ */
+export function slimRequestForShareUrl(request: QuizGenerationRequest): QuizGenerationRequest {
+  return slimQuizRequest(request);
+}
+
 function slimRequestForStorage(request: QuizGenerationRequest): QuizGenerationRequest {
-  if (request.input_type === "file" || request.input_type === "image") {
-    try {
-      const parsed = JSON.parse(request.content) as {
-        fileName?: string;
-        mimeType?: string;
-        dataUrl?: string;
-      };
-      return {
-        ...request,
-        content: JSON.stringify({
-          fileName: parsed.fileName ?? "",
-          mimeType: parsed.mimeType ?? "",
-          dataUrl: "",
-        }),
-      };
-    } catch {
-      return { ...request, content: "" };
-    }
-  }
-  if (request.content.length > MAX_TEXT_CONTENT_CHARS) {
-    return {
-      ...request,
-      content: request.content.slice(0, MAX_TEXT_CONTENT_CHARS),
-    };
-  }
-  return request;
+  return slimQuizRequest(request);
 }
 
 function persistJson(key: string, candidates: string[]): void {

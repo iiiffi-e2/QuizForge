@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { ProgressBar } from "@/components/ProgressBar";
 import { QuizCard } from "@/components/QuizCard";
 import { loadQuizSession, loadUserAnswers, saveQuizSession, saveUserAnswers } from "@/lib/quiz-storage";
+import { fetchSharedQuizById } from "@/lib/share-client";
 import { decodeQuizFromUrl } from "@/lib/share";
 import { QuizSession } from "@/lib/types";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -36,34 +37,85 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+type LoadStatus = "loading" | "ready" | "error";
+
 function QuizPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [session] = useState<QuizSession | null>(() => {
-    const sharedParam = searchParams.get("q");
-    if (sharedParam) {
-      const shared = decodeQuizFromUrl(sharedParam);
-      if (shared) {
-        saveQuizSession(shared);
-        saveUserAnswers(new Array(shared.quiz.questions.length).fill(-1));
-        return shared;
-      }
-    }
-    return loadQuizSession();
-  });
+  const sid = searchParams.get("sid");
+  const qParam = searchParams.get("q");
+
+  const [session, setSession] = useState<QuizSession | null>(null);
+  const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<number[]>(() =>
-    session ? loadUserAnswers(session.quiz.questions.length) : [],
-  );
-  const [timeLeft, setTimeLeft] = useState<number | null>(() =>
-    session?.request.settings.time_limit_seconds ?? null,
-  );
+  const [answers, setAnswers] = useState<number[]>([]);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
+    function applySession(next: QuizSession | null) {
+      setSession(next);
+      if (next) {
+        setAnswers(loadUserAnswers(next.quiz.questions.length));
+        setTimeLeft(next.request.settings.time_limit_seconds ?? null);
+      } else {
+        setAnswers([]);
+        setTimeLeft(null);
+      }
+    }
+
+    async function resolveSession() {
+      setLoadStatus("loading");
+      setLoadError(null);
+
+      if (sid) {
+        const result = await fetchSharedQuizById(sid);
+        if (cancelled) return;
+        if (!result.ok) {
+          setLoadError(result.message);
+          setLoadStatus("error");
+          applySession(null);
+          return;
+        }
+        saveQuizSession(result.session);
+        saveUserAnswers(new Array(result.session.quiz.questions.length).fill(-1));
+        applySession(result.session);
+        setLoadStatus("ready");
+        return;
+      }
+
+      if (qParam) {
+        const shared = decodeQuizFromUrl(qParam);
+        if (shared) {
+          saveQuizSession(shared);
+          saveUserAnswers(new Array(shared.quiz.questions.length).fill(-1));
+          applySession(shared);
+        } else {
+          applySession(loadQuizSession());
+        }
+        setLoadStatus("ready");
+        return;
+      }
+
+      applySession(loadQuizSession());
+      setLoadStatus("ready");
+    }
+
+    void resolveSession();
+    return () => {
+      cancelled = true;
+    };
+  }, [sid, qParam]);
+
+  useEffect(() => {
+    if (loadStatus !== "ready") return;
     if (!session || session.quiz.questions.length === 0) {
       router.replace("/");
     }
-  }, [router, session]);
+  }, [loadStatus, router, session]);
 
   const progress = useMemo(() => {
     if (!session) return 0;
@@ -175,7 +227,25 @@ function QuizPageInner() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [session, currentIndex, answers, onSelectAnswer, onNext, onBack]);
 
-  if (!session) {
+  if (loadStatus === "error") {
+    return (
+      <div className="min-h-screen bg-[var(--quiz-background)]">
+        <Navbar />
+        <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+          <p className="text-base font-medium text-[var(--quiz-error)]">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="mt-4 rounded-xl bg-[var(--quiz-primary)] px-4 py-2.5 text-sm font-semibold text-white"
+          >
+            Return home
+          </button>
+        </main>
+      </div>
+    );
+  }
+
+  if (loadStatus === "loading" || !session) {
     return (
       <div className="min-h-screen bg-[var(--quiz-background)]">
         <Navbar />

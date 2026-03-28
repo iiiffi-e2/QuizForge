@@ -18,6 +18,7 @@ import {
   saveRequestDraft,
   saveUserAnswers,
 } from "@/lib/quiz-storage";
+import { createShortShareUrl } from "@/lib/share-client";
 import { encodeQuizToUrl } from "@/lib/share";
 import { QuizSession } from "@/lib/types";
 import { useRouter } from "next/navigation";
@@ -40,6 +41,7 @@ export default function ResultsPage() {
   const [error, setError] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isCopyingLink, setIsCopyingLink] = useState(false);
 
   useEffect(() => {
     if (!session || session.quiz.questions.length === 0) {
@@ -162,17 +164,32 @@ export default function ResultsPage() {
             </button>
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 if (!session) return;
-                const url = encodeQuizToUrl(session);
-                navigator.clipboard.writeText(url).then(() => {
+                setError(null);
+                setIsCopyingLink(true);
+                try {
+                  let url: string | null = await createShortShareUrl(session);
+                  if (!url) {
+                    url = encodeQuizToUrl(session);
+                  }
+                  if (!url) {
+                    setError(
+                      "This quiz is too large to share as a link. Try fewer questions or a shorter source.",
+                    );
+                    return;
+                  }
+                  await navigator.clipboard.writeText(url);
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
-                });
+                } finally {
+                  setIsCopyingLink(false);
+                }
               }}
-              className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2.5 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80"
+              disabled={isCopyingLink}
+              className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2.5 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {copied ? "Copied!" : "Copy Link"}
+              {copied ? "Copied!" : isCopyingLink ? "Copying…" : "Copy Link"}
             </button>
             <button
               type="button"
