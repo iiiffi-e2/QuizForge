@@ -1,11 +1,10 @@
-import "@/lib/pdf-dom-polyfill";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import mammoth from "mammoth";
 import OpenAI from "openai";
-import { PDFParse } from "pdf-parse";
 import * as cheerio from "cheerio";
+import { installPdfPolyfills } from "@/lib/pdf-dom-polyfill";
 import { NextResponse } from "next/server";
 import { QuizGenerationRequest, QuizPayload, QuizQuestion } from "@/lib/types";
 import { normalizeText } from "@/lib/utils";
@@ -15,13 +14,25 @@ const MAX_CONTENT_LENGTH_FOR_MODEL = 6000;
 
 let pdfWorkerConfigured = false;
 
-function ensurePdfWorker(): void {
+type PDFParseCtor = (typeof import("pdf-parse"))["PDFParse"];
+
+function ensurePdfWorker(PDFParse: PDFParseCtor): void {
   if (pdfWorkerConfigured) return;
   pdfWorkerConfigured = true;
   const requireFromProject = createRequire(join(process.cwd(), "package.json"));
   const pdfjsDistDir = dirname(requireFromProject.resolve("pdfjs-dist/package.json"));
   const pdfWorkerPath = join(pdfjsDistDir, "legacy", "build", "pdf.worker.mjs");
   PDFParse.setWorker(pathToFileURL(pdfWorkerPath).href);
+}
+
+let pdfParseModule: typeof import("pdf-parse") | null = null;
+
+async function getPDFParse(): Promise<PDFParseCtor> {
+  installPdfPolyfills();
+  if (!pdfParseModule) {
+    pdfParseModule = await import("pdf-parse");
+  }
+  return pdfParseModule.PDFParse;
 }
 
 const QUIZ_SCHEMA = {
@@ -242,7 +253,8 @@ async function extractFromFilePayload(content: string): Promise<string> {
   }
 
   if (lowerName.endsWith(".pdf") || mimeType.includes("application/pdf")) {
-    ensurePdfWorker();
+    const PDFParse = await getPDFParse();
+    ensurePdfWorker(PDFParse);
     const parser = new PDFParse({ data: buffer });
     try {
       const result = await parser.getText();
