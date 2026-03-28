@@ -48,7 +48,7 @@ export function QuizCard({
       </div>
 
       {mode === "study" && answered ? (
-        <div className="mt-5 rounded-xl border border-[var(--quiz-border)] bg-slate-50 p-4">
+        <div className="mt-5 rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] p-4">
           <p className="text-sm font-semibold text-[var(--quiz-text-primary)]">
             Explanation
           </p>

@@ -12,6 +12,7 @@ export const STORAGE_KEYS = {
   REQUEST_DRAFT: "quizforge-request-draft",
   QUIZ_SESSION: "quizforge-session",
   USER_ANSWERS: "quizforge-user-answers",
+  THEME: "quizforge-theme",
 } as const;
 
 export const INPUT_TABS: Array<{ value: QuizInputType; label: string }> = [
@@ -60,12 +61,22 @@ export const SOURCE_BEHAVIORS: Array<{
   },
 ];
 
+export const TIME_LIMITS: Array<{ value: number | null; label: string }> = [
+  { value: null, label: "None" },
+  { value: 30, label: "30 sec" },
+  { value: 60, label: "1 min" },
+  { value: 120, label: "2 min" },
+  { value: 300, label: "5 min" },
+  { value: 600, label: "10 min" },
+];
+
 export const DEFAULT_SETTINGS: QuizSettings = {
   question_count: 10,
   difficulty: "medium",
   level: "high_school",
   mode: "test",
   source_behavior: "material_only",
+  time_limit_seconds: null,
 };
 
 export const DEFAULT_REQUEST: QuizGenerationRequest = {

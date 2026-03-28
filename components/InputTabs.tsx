@@ -43,7 +43,7 @@ export function InputTabs({
           placeholder="Enter a topic (e.g., Photosynthesis)"
           value={content}
           onChange={(event) => onContentChange(event.target.value)}
-          className="w-full rounded-xl border border-[var(--quiz-border)] bg-white px-4 py-3 text-sm text-[var(--quiz-text-primary)] placeholder:text-[var(--quiz-muted)] focus:border-[var(--quiz-primary)] focus:outline-none sm:text-base"
+          className="w-full rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-3 text-sm text-[var(--quiz-text-primary)] placeholder:text-[var(--quiz-muted)] focus:border-[var(--quiz-primary)] focus:outline-none sm:text-base"
         />
       );
     }
@@ -55,7 +55,7 @@ export function InputTabs({
           placeholder="Paste your material here..."
           value={content}
           onChange={(event) => onContentChange(event.target.value)}
-          className="w-full rounded-xl border border-[var(--quiz-border)] bg-white px-4 py-3 text-sm text-[var(--quiz-text-primary)] placeholder:text-[var(--quiz-muted)] focus:border-[var(--quiz-primary)] focus:outline-none sm:text-base"
+          className="w-full rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-3 text-sm text-[var(--quiz-text-primary)] placeholder:text-[var(--quiz-muted)] focus:border-[var(--quiz-primary)] focus:outline-none sm:text-base"
         />
       );
     }
@@ -67,7 +67,7 @@ export function InputTabs({
           placeholder="https://example.com/article"
           value={content}
           onChange={(event) => onContentChange(event.target.value)}
-          className="w-full rounded-xl border border-[var(--quiz-border)] bg-white px-4 py-3 text-sm text-[var(--quiz-text-primary)] placeholder:text-[var(--quiz-muted)] focus:border-[var(--quiz-primary)] focus:outline-none sm:text-base"
+          className="w-full rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-3 text-sm text-[var(--quiz-text-primary)] placeholder:text-[var(--quiz-muted)] focus:border-[var(--quiz-primary)] focus:outline-none sm:text-base"
         />
       );
     }
@@ -87,7 +87,7 @@ export function InputTabs({
             else imageInputRef.current?.click();
           }
         }}
-        className="flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[var(--quiz-border)] bg-slate-50 p-6 text-center hover:bg-slate-100"
+        className="flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[var(--quiz-border)] bg-[var(--quiz-background)] p-6 text-center hover:opacity-80"
       >
         <p className="text-sm font-semibold text-[var(--quiz-text-primary)] sm:text-base">
           Drag & drop or click to upload
@@ -116,7 +116,7 @@ export function InputTabs({
               "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
               inputType === tab.value
                 ? "bg-[var(--quiz-primary)] text-white"
-                : "text-[var(--quiz-text-secondary)] hover:bg-slate-100",
+                : "text-[var(--quiz-text-secondary)] hover:opacity-80",
             )}
           >
             {tab.label}

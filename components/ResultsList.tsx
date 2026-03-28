@@ -18,7 +18,7 @@ export function ResultsList({ questions, answers }: ResultsListProps) {
         return (
           <article
             key={`${index}-${question.question.slice(0, 20)}`}
-            className="rounded-2xl border border-[var(--quiz-border)] bg-white p-5 shadow-sm"
+            className="rounded-2xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] p-5 shadow-sm"
           >
             <p className="text-sm font-semibold text-[var(--quiz-text-primary)] sm:text-base">
               {index + 1}. {question.question}
@@ -46,7 +46,7 @@ export function ResultsList({ questions, answers }: ResultsListProps) {
               </p>
             </div>
 
-            <div className="mt-3 rounded-xl border border-[var(--quiz-border)] bg-slate-50 p-3">
+            <div className="mt-3 rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--quiz-muted)]">
                 Based on
               </p>

@@ -19,6 +19,7 @@ export interface QuizSettings {
   level: Level;
   mode: QuizMode;
   source_behavior: SourceBehavior;
+  time_limit_seconds: number | null;
 }
 
 export interface QuizQuestion {
