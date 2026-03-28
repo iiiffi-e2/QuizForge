@@ -14,33 +14,33 @@ import {
 } from "@/lib/quiz-storage";
 import { QuizGenerationRequest, QuizInputType, QuizSession } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type LoadingStage = "extracting" | "generating";
 
 export default function HomePage() {
   const router = useRouter();
-  const [request, setRequest] = useState<QuizGenerationRequest>(() => {
-    if (typeof window === "undefined") {
-      return {
-        ...DEFAULT_REQUEST,
-        settings: { ...DEFAULT_REQUEST.settings },
-      };
-    }
-
-    const stored = loadRequestDraft();
-    if (stored) return stored;
-
-    return {
-      ...DEFAULT_REQUEST,
-      settings: { ...DEFAULT_REQUEST.settings },
-    };
-  });
+  const [request, setRequest] = useState<QuizGenerationRequest>(() => ({
+    ...DEFAULT_REQUEST,
+    settings: { ...DEFAULT_REQUEST.settings },
+  }));
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState<LoadingStage>("extracting");
+  const skipInitialSave = useRef(true);
 
   useEffect(() => {
+    const stored = loadRequestDraft();
+    if (stored) {
+      setRequest(stored);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (skipInitialSave.current) {
+      skipInitialSave.current = false;
+      return;
+    }
     saveRequestDraft(request);
   }, [request]);
 
