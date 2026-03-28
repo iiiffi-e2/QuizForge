@@ -75,7 +75,7 @@ export const DEFAULT_SETTINGS: QuizSettings = {
   difficulty: "medium",
   level: "high_school",
   mode: "test",
-  source_behavior: "material_only",
+  source_behavior: "material_plus_general",
   time_limit_seconds: null,
 };
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { loadTheme, saveTheme } from "@/lib/quiz-storage";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export function Navbar() {
@@ -20,9 +21,12 @@ export function Navbar() {
   return (
     <header className="no-print w-full border-b border-[var(--quiz-border)] bg-[var(--quiz-card)]">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
-        <div className="text-lg font-semibold text-[var(--quiz-text-primary)]">
+        <Link
+          href="/"
+          className="text-lg font-semibold text-[var(--quiz-text-primary)] transition-colors hover:text-[var(--quiz-secondary)]"
+        >
           QuizForge
-        </div>
+        </Link>
         <div className="flex items-center gap-3">
           <button
             type="button"

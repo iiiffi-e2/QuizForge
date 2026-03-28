@@ -149,6 +149,13 @@ export default function ResultsPage() {
             >
               {copied ? "Copied!" : "Copy Link"}
             </button>
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2.5 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80"
+            >
+              Main screen
+            </button>
           </div>
 
           {error ? (
