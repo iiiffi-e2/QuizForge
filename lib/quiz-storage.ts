@@ -3,6 +3,11 @@
 import { STORAGE_KEYS } from "@/lib/constants";
 import { QuizGenerationRequest, QuizSession } from "@/lib/types";
 
+export type QuizImagePreview = {
+  dataUrl: string;
+  fileName: string;
+};
+
 /** Stay under typical ~5MB localStorage limits; large entries fail before setItem too. */
 const MAX_LOCAL_STORAGE_CHARS = 4_000_000;
 /** Truncate pasted text when persisting so drafts still fit after slimming. */
@@ -98,6 +103,28 @@ export function loadRequestDraft(): QuizGenerationRequest | null {
 
 export function saveQuizSession(session: QuizSession): void {
   if (!hasLocalStorage()) return;
+  if (session.request.input_type === "image") {
+    try {
+      const parsed = JSON.parse(session.request.content) as {
+        dataUrl?: string;
+        fileName?: string;
+        mimeType?: string;
+      };
+      if (typeof parsed.dataUrl === "string" && parsed.dataUrl.length > 0) {
+        persistQuizImagePreview({
+          dataUrl: parsed.dataUrl,
+          fileName: typeof parsed.fileName === "string" ? parsed.fileName : "",
+        });
+      } else {
+        clearQuizImagePreview();
+      }
+    } catch {
+      clearQuizImagePreview();
+    }
+  } else {
+    clearQuizImagePreview();
+  }
+
   const full = JSON.stringify(session);
   const slimmedSession: QuizSession = {
     ...session,
@@ -105,6 +132,94 @@ export function saveQuizSession(session: QuizSession): void {
   };
   const slim = JSON.stringify(slimmedSession);
   persistJson(STORAGE_KEYS.QUIZ_SESSION, [full, slim]);
+}
+
+function persistQuizImagePreview(preview: QuizImagePreview): void {
+  if (!hasLocalStorage()) return;
+  const payload = JSON.stringify(preview);
+  if (payload.length > MAX_LOCAL_STORAGE_CHARS) {
+    clearQuizImagePreview();
+    return;
+  }
+  try {
+    localStorage.setItem(STORAGE_KEYS.QUIZ_IMAGE_PREVIEW, payload);
+  } catch (error) {
+    if (isQuotaExceeded(error)) {
+      clearQuizImagePreview();
+    }
+  }
+}
+
+export function loadQuizImagePreview(): QuizImagePreview | null {
+  if (!hasLocalStorage()) return null;
+  const raw = localStorage.getItem(STORAGE_KEYS.QUIZ_IMAGE_PREVIEW);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      !("dataUrl" in parsed) ||
+      typeof (parsed as { dataUrl: unknown }).dataUrl !== "string" ||
+      !(parsed as { dataUrl: string }).dataUrl.trim()
+    ) {
+      return null;
+    }
+    const fileName =
+      "fileName" in parsed && typeof (parsed as { fileName: unknown }).fileName === "string"
+        ? (parsed as { fileName: string }).fileName
+        : "";
+    return { dataUrl: (parsed as { dataUrl: string }).dataUrl, fileName };
+  } catch {
+    return null;
+  }
+}
+
+export function clearQuizImagePreview(): void {
+  if (!hasLocalStorage()) return;
+  try {
+    localStorage.removeItem(STORAGE_KEYS.QUIZ_IMAGE_PREVIEW);
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Restores image bytes for API calls when the session was slimmed (data URL stripped from storage).
+ */
+export function mergeStoredImageIntoRequest(
+  request: QuizGenerationRequest,
+): QuizGenerationRequest {
+  if (request.input_type !== "image") return request;
+  const preview = loadQuizImagePreview();
+  if (!preview?.dataUrl) return request;
+  try {
+    const parsed = JSON.parse(request.content) as {
+      fileName?: string;
+      mimeType?: string;
+      dataUrl?: string;
+    };
+    if (parsed.dataUrl && parsed.dataUrl.length > 0) {
+      return request;
+    }
+    return {
+      ...request,
+      content: JSON.stringify({
+        fileName: preview.fileName || parsed.fileName || "",
+        mimeType: parsed.mimeType ?? "image/jpeg",
+        dataUrl: preview.dataUrl,
+      }),
+    };
+  } catch {
+    return {
+      ...request,
+      content: JSON.stringify({
+        fileName: preview.fileName,
+        mimeType: "image/jpeg",
+        dataUrl: preview.dataUrl,
+      }),
+    };
+  }
 }
 
 export function loadQuizSession(): QuizSession | null {

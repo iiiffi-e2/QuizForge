@@ -12,6 +12,7 @@ export const STORAGE_KEYS = {
   REQUEST_DRAFT: "quizforge-request-draft",
   QUIZ_SESSION: "quizforge-session",
   USER_ANSWERS: "quizforge-user-answers",
+  QUIZ_IMAGE_PREVIEW: "quizforge-quiz-image-preview",
   THEME: "quizforge-theme",
 } as const;
 

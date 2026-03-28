@@ -35,6 +35,11 @@ export function InputTabs({
       ? contentData.fileName
       : "";
 
+  const imagePreviewUrl =
+    inputType === "image" && contentData?.dataUrl?.trim()
+      ? contentData.dataUrl
+      : null;
+
   const renderContent = () => {
     if (inputType === "topic") {
       return (
@@ -104,6 +109,8 @@ export function InputTabs({
     );
   };
 
+  const showImagePreview = inputType === "image" && imagePreviewUrl;
+
   return (
     <section>
       <div className="flex flex-wrap gap-2">
@@ -125,6 +132,20 @@ export function InputTabs({
       </div>
 
       <div className="mt-4">{renderContent()}</div>
+
+      {showImagePreview ? (
+        <div className="mt-4 flex flex-col items-center">
+          <img
+            src={imagePreviewUrl}
+            alt={
+              currentFileName
+                ? `Preview of ${currentFileName}`
+                : "Uploaded image preview"
+            }
+            className="max-h-64 max-w-full rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] object-contain shadow-sm"
+          />
+        </div>
+      ) : null}
 
       <input
         ref={fileInputRef}
@@ -161,11 +182,12 @@ export function InputTabs({
 
 function safeParseContent(content: string): {
   fileName?: string;
+  dataUrl?: string;
 } | null {
   try {
     const parsed = JSON.parse(content) as unknown;
     if (typeof parsed !== "object" || parsed === null) return null;
-    return parsed as { fileName?: string };
+    return parsed as { fileName?: string; dataUrl?: string };
   } catch {
     return null;
   }

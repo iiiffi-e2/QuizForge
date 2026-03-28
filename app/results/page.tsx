@@ -10,8 +10,10 @@ import {
 } from "@/lib/quiz-client-utils";
 import { getScore } from "@/lib/utils";
 import {
+  loadQuizImagePreview,
   loadQuizSession,
   loadUserAnswers,
+  mergeStoredImageIntoRequest,
   saveQuizSession,
   saveRequestDraft,
   saveUserAnswers,
@@ -21,9 +23,17 @@ import { QuizSession } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+function useQuizImagePreview(session: QuizSession | null) {
+  return useMemo(() => {
+    if (!session || session.request.input_type !== "image") return null;
+    return loadQuizImagePreview();
+  }, [session]);
+}
+
 export default function ResultsPage() {
   const router = useRouter();
   const [session] = useState<QuizSession | null>(() => loadQuizSession());
+  const imagePreview = useQuizImagePreview(session);
   const [answers] = useState<number[]>(() =>
     session ? loadUserAnswers(session.quiz.questions.length) : [],
   );
@@ -50,10 +60,11 @@ export default function ResultsPage() {
     setError(null);
 
     try {
-      const request =
+      const baseRequest =
         variant === "same"
           ? createTryAgainRequest(session)
           : createDifficultyVariantRequest(session, variant);
+      const request = mergeStoredImageIntoRequest(baseRequest);
 
       const quiz = await generateQuizFromApi(request);
       const nextSession: QuizSession = {
@@ -102,6 +113,20 @@ export default function ResultsPage() {
           <p className="mt-2 text-sm text-[var(--quiz-text-secondary)]">
             Review each question below and regenerate with one click.
           </p>
+
+          {imagePreview?.dataUrl ? (
+            <div className="mt-5 flex justify-center sm:justify-start">
+              <img
+                src={imagePreview.dataUrl}
+                alt={
+                  imagePreview.fileName
+                    ? `Source image: ${imagePreview.fileName}`
+                    : "Source image for this quiz"
+                }
+                className="max-h-56 max-w-full rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] object-contain shadow-sm"
+              />
+            </div>
+          ) : null}
 
           <div className="mt-5 flex flex-wrap gap-3 no-print">
             <button
