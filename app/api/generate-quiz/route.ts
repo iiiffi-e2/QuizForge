@@ -6,6 +6,11 @@ import OpenAI from "openai";
 import * as cheerio from "cheerio";
 import { installPdfPolyfills } from "@/lib/pdf-dom-polyfill";
 import { NextResponse } from "next/server";
+import {
+  assertContentAllowed,
+  ContentPolicyError,
+  serializeQuizForModeration,
+} from "@/lib/content-moderation";
 import { QuizGenerationRequest, QuizPayload, QuizQuestion } from "@/lib/types";
 import { normalizeText } from "@/lib/utils";
 
@@ -121,10 +126,21 @@ export async function POST(request: Request) {
 
     const normalized = normalizeExtractedContent(extracted);
     const modelReadyMaterial = await summarizeIfNeeded(normalized);
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "OPENAI_API_KEY is missing." }, { status: 500 });
+    }
+    const moderationClient = new OpenAI({ apiKey });
+    await assertContentAllowed(moderationClient, modelReadyMaterial);
+
     const quiz = await generateQuizWithRetry(modelReadyMaterial, typed);
 
     return NextResponse.json(quiz);
   } catch (caughtError) {
+    if (caughtError instanceof ContentPolicyError) {
+      return NextResponse.json({ error: caughtError.message }, { status: 400 });
+    }
     const message =
       caughtError instanceof Error ? caughtError.message : "Internal server error.";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -434,6 +450,9 @@ async function generateQuizWithRetry(
     try {
       return await generateQuiz(sourceMaterial, request);
     } catch (error) {
+      if (error instanceof ContentPolicyError) {
+        throw error;
+      }
       lastError =
         error instanceof Error ? error : new Error("Failed to generate quiz.");
     }
@@ -455,6 +474,7 @@ async function generateQuiz(
 
   const instructionLines = [
     "You create high-quality educational multiple-choice quizzes.",
+    "Content must be educational, respectful, and appropriate for a general audience: no harassment, slurs, hateful stereotypes, or gratuitous graphic or sexual material.",
     "Follow all rules exactly.",
     "Return JSON only matching the required schema.",
     "Rules:",
@@ -515,6 +535,7 @@ async function generateQuiz(
   }
 
   const validated = validateQuizPayload(parsed, request.settings.question_count);
+  await assertContentAllowed(client, serializeQuizForModeration(validated));
   return validated;
 }
 
