@@ -23,7 +23,7 @@ export async function GET(
     return NextResponse.json({ error: "Invalid share id." }, { status: 400 });
   }
 
-  const raw = await redis.get<string>(`share:${id}`);
+  const raw = await redis.get(`share:${id}`);
   if (raw == null || raw === "") {
     return NextResponse.json(
       { error: "This link has expired or is invalid." },
@@ -31,11 +31,18 @@ export async function GET(
     );
   }
 
+  // @upstash/redis parses JSON values automatically; GET may return an object, not a string.
   let session: QuizSession;
-  try {
-    session = JSON.parse(raw) as QuizSession;
-  } catch {
-    return NextResponse.json({ error: "Corrupted share data." }, { status: 500 });
+  if (typeof raw === "string") {
+    try {
+      session = JSON.parse(raw) as QuizSession;
+    } catch {
+      return NextResponse.json({ error: "Corrupted share data." }, { status: 500 });
+    }
+  } else if (typeof raw === "object" && raw !== null) {
+    session = raw as QuizSession;
+  } else {
+    return NextResponse.json({ error: "Invalid share payload." }, { status: 500 });
   }
 
   if (!session?.quiz?.questions?.length) {
