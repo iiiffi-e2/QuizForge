@@ -58,7 +58,8 @@ export const SOURCE_BEHAVIORS: Array<{
   {
     value: "material_plus_general",
     label: "material_plus_general",
-    description: "Use material and broader context.",
+    description:
+      "Use material and broader context. For images, if a title or work is visible, quizzes may draw on general knowledge about that work—not only what appears in the photo.",
   },
 ];
 

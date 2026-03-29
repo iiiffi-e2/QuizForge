@@ -490,10 +490,19 @@ async function generateQuiz(
       : "- You may expand with general knowledge when useful.",
   ];
   if (request.input_type === "image") {
-    instructionLines.push(
-      "- When input_type is image: prioritize questions about the MAIN SUBJECT and the overall scene described under VISUAL DESCRIPTION and NOTABLE DETAILS.",
-      "- When READABLE TEXT is present, include questions grounded in that text alongside visual-content questions; when it is absent or minimal, rely on the visual description.",
-    );
+    if (request.settings.source_behavior === "material_only") {
+      instructionLines.push(
+        "- When input_type is image and source_behavior is material_only: use only facts inferable from the provided material (MAIN SUBJECT, VISUAL DESCRIPTION, NOTABLE DETAILS, READABLE TEXT). Do not invent book or document contents you cannot see.",
+        "- Prioritize questions about the MAIN SUBJECT and the scene under VISUAL DESCRIPTION and NOTABLE DETAILS.",
+        "- When READABLE TEXT is present, include questions grounded in that text alongside visual-content questions; when it is absent or minimal, rely on the visual description.",
+      );
+    } else {
+      instructionLines.push(
+        "- When input_type is image and general knowledge is allowed: if READABLE TEXT or MAIN SUBJECT clearly identifies a named work (book, article, course, author/title, artwork, etc.), focus most questions on that work's subject matter, themes, and typical educational facts using general knowledge—not on cover design, colors, typography, or layout unless the image has no identifiable work.",
+        "- If the image is a generic scene with no identifiable work, use MAIN SUBJECT, VISUAL DESCRIPTION, and NOTABLE DETAILS as usual.",
+        "- If identification is ambiguous, prefer conservative questions grounded in visible text and description rather than guessing.",
+      );
+    }
   }
   const instructions = instructionLines.join("\n");
 
