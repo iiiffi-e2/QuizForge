@@ -20,7 +20,10 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
   };
 
   return (
-    <section className="mt-8 border-t border-[var(--quiz-border)] pt-8">
+    <section
+      id="quiz-settings"
+      className="scroll-mt-28 mt-8 border-t border-[var(--quiz-border)] pt-8"
+    >
       <h2 className="text-lg font-bold text-[var(--quiz-text-primary)] sm:text-2xl">
         Quiz Settings
       </h2>

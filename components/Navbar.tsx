@@ -46,6 +46,18 @@ export function Navbar() {
           </span>
         </Link>
         <div className="flex items-center gap-2 sm:gap-4">
+          <Link
+            href="/create"
+            className="hidden rounded-xl bg-gradient-to-r from-[var(--quiz-brand-500)] to-[var(--quiz-brand-600)] px-4 py-2 text-sm font-bold text-white shadow-[var(--quiz-glow)] transition-all hover:from-[var(--quiz-brand-600)] hover:to-[var(--quiz-brand-700)] active:scale-[0.99] sm:inline-flex"
+          >
+            Create quiz
+          </Link>
+          <Link
+            href="/create"
+            className="inline-flex rounded-xl px-3 py-2 text-sm font-bold text-[var(--quiz-brand-600)] transition-colors hover:text-[var(--quiz-brand-700)] sm:hidden"
+          >
+            Create
+          </Link>
           <span className="rounded-full border border-[var(--quiz-brand-600)]/25 bg-[var(--quiz-brand-600)]/10 px-3 py-1 text-xs font-semibold text-[var(--quiz-brand-600)] sm:text-sm">
             PRO
           </span>
