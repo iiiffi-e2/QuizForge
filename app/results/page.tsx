@@ -46,12 +46,64 @@ export default function ResultsPage() {
   const [isCopyingLink, setIsCopyingLink] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [attemptPersistError, setAttemptPersistError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session || session.quiz.questions.length === 0) {
       router.replace("/");
     }
   }, [router, session]);
+
+  useEffect(() => {
+    if (!session || authStatus !== "authenticated") return;
+    const doneKey = `quizforge-attempt-done-${session.created_at}`;
+    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(doneKey)) {
+      return;
+    }
+    const idemStorageKey = `quizforge-attempt-idem-${session.created_at}`;
+    let idempotencyKey: string | null = null;
+    if (typeof sessionStorage !== "undefined") {
+      idempotencyKey = sessionStorage.getItem(idemStorageKey);
+      if (!idempotencyKey) {
+        idempotencyKey = crypto.randomUUID();
+        sessionStorage.setItem(idemStorageKey, idempotencyKey);
+      }
+    } else {
+      idempotencyKey = crypto.randomUUID();
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/quiz-attempts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session, answers, idempotencyKey }),
+        });
+        if (cancelled) return;
+        if (res.ok) {
+          if (typeof sessionStorage !== "undefined") {
+            sessionStorage.setItem(doneKey, "1");
+          }
+        } else {
+          const data = (await res.json()) as { error?: string };
+          setAttemptPersistError(
+            typeof data.error === "string"
+              ? data.error
+              : "Could not sync your quiz to your profile. Your score is still saved locally.",
+          );
+        }
+      } catch {
+        if (!cancelled) {
+          setAttemptPersistError(
+            "Could not sync your quiz to your profile. Your score is still saved locally.",
+          );
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session, authStatus, answers]);
 
   const score = useMemo(() => {
     if (!session) return 0;
@@ -255,6 +307,11 @@ export default function ResultsPage() {
           ) : null}
           {saveError ? (
             <p className="mt-3 text-sm font-medium text-[var(--quiz-error)]">{saveError}</p>
+          ) : null}
+          {attemptPersistError ? (
+            <p className="mt-3 text-sm font-medium text-[var(--quiz-error)]" role="status">
+              {attemptPersistError}
+            </p>
           ) : null}
         </header>
 
