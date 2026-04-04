@@ -1,6 +1,10 @@
 "use client";
 
-import { INPUT_TABS } from "@/lib/constants";
+import {
+  SOURCE_INPUT_TABS,
+  inputTypeToTabId,
+  tabIdToInputType,
+} from "@/lib/constants";
 import { QuizInputType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useRef } from "react";
@@ -40,15 +44,17 @@ export function InputTabs({
       ? contentData.dataUrl
       : null;
 
+  const activeTabId = inputTypeToTabId(inputType);
+
   const renderContent = () => {
     if (inputType === "topic") {
       return (
         <input
           type="text"
-          placeholder="Enter a topic (e.g., Photosynthesis)"
+          placeholder="Enter a topic (e.g., Photosynthesis, World War II, Quantum Physics)"
           value={content}
           onChange={(event) => onContentChange(event.target.value)}
-          className="w-full rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-3 text-sm text-[var(--quiz-text-primary)] placeholder:text-[var(--quiz-muted)] focus:border-[var(--quiz-primary)] focus:outline-none sm:text-base"
+          className="w-full rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] px-4 py-3 text-sm text-[var(--quiz-text-primary)] placeholder:text-[var(--quiz-muted)] focus:border-[var(--quiz-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--quiz-ring)] sm:text-base"
         />
       );
     }
@@ -60,7 +66,7 @@ export function InputTabs({
           placeholder="Paste your material here..."
           value={content}
           onChange={(event) => onContentChange(event.target.value)}
-          className="w-full rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-3 text-sm text-[var(--quiz-text-primary)] placeholder:text-[var(--quiz-muted)] focus:border-[var(--quiz-primary)] focus:outline-none sm:text-base"
+          className="w-full resize-y rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] px-4 py-3 text-sm text-[var(--quiz-text-primary)] placeholder:text-[var(--quiz-muted)] focus:border-[var(--quiz-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--quiz-ring)] sm:text-base"
         />
       );
     }
@@ -72,7 +78,7 @@ export function InputTabs({
           placeholder="https://example.com/article"
           value={content}
           onChange={(event) => onContentChange(event.target.value)}
-          className="w-full rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-3 text-sm text-[var(--quiz-text-primary)] placeholder:text-[var(--quiz-muted)] focus:border-[var(--quiz-primary)] focus:outline-none sm:text-base"
+          className="w-full rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] px-4 py-3 text-sm text-[var(--quiz-text-primary)] placeholder:text-[var(--quiz-muted)] focus:border-[var(--quiz-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--quiz-ring)] sm:text-base"
         />
       );
     }
@@ -92,7 +98,7 @@ export function InputTabs({
             else imageInputRef.current?.click();
           }
         }}
-        className="flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[var(--quiz-border)] bg-[var(--quiz-background)] p-6 text-center hover:opacity-80"
+        className="flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[var(--quiz-border)] bg-[var(--quiz-background)] p-6 text-center transition-colors hover:border-[var(--quiz-muted)]"
       >
         <p className="text-sm font-semibold text-[var(--quiz-text-primary)] sm:text-base">
           Drag & drop or click to upload
@@ -112,24 +118,71 @@ export function InputTabs({
   const showImagePreview = inputType === "image" && imagePreviewUrl;
 
   return (
-    <section>
-      <div className="flex flex-wrap gap-2">
-        {INPUT_TABS.map((tab) => (
-          <button
-            key={tab.value}
-            type="button"
-            onClick={() => onTypeChange(tab.value)}
-            className={cn(
-              "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-              inputType === tab.value
-                ? "bg-[var(--quiz-primary)] text-white"
-                : "text-[var(--quiz-text-secondary)] hover:opacity-80",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+    <section className="mt-8 border-t border-[var(--quiz-border)] pt-8">
+      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--quiz-muted)]">
+        Source
+      </p>
+      <div
+        className="mt-3 inline-flex flex-wrap gap-1 rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] p-1"
+        role="tablist"
+        aria-label="Source type"
+      >
+        {SOURCE_INPUT_TABS.map((tab) => {
+          const selected = activeTabId === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => onTypeChange(tabIdToInputType(tab.id, inputType))}
+              className={cn(
+                "min-w-[4.5rem] rounded-lg px-4 py-2 text-sm font-semibold transition-colors",
+                selected
+                  ? "bg-[var(--quiz-card)] text-[var(--quiz-text-primary)] shadow-sm ring-1 ring-[var(--quiz-border)]"
+                  : "text-[var(--quiz-text-secondary)] hover:text-[var(--quiz-text-primary)]",
+              )}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
+
+      {activeTabId === "text" ? (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <div
+            className="inline-flex gap-1 rounded-lg border border-[var(--quiz-border)] bg-[var(--quiz-background)] p-0.5"
+            role="group"
+            aria-label="Topic or pasted text"
+          >
+            <button
+              type="button"
+              onClick={() => onTypeChange("topic")}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors sm:text-sm",
+                inputType === "topic"
+                  ? "bg-[var(--quiz-primary)] text-white"
+                  : "text-[var(--quiz-text-secondary)] hover:text-[var(--quiz-text-primary)]",
+              )}
+            >
+              Topic
+            </button>
+            <button
+              type="button"
+              onClick={() => onTypeChange("text")}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors sm:text-sm",
+                inputType === "text"
+                  ? "bg-[var(--quiz-primary)] text-white"
+                  : "text-[var(--quiz-text-secondary)] hover:text-[var(--quiz-text-primary)]",
+              )}
+            >
+              Paste text
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-4">{renderContent()}</div>
 

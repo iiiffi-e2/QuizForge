@@ -20,11 +20,11 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
   };
 
   return (
-    <section className="mt-7">
-      <h2 className="text-lg font-semibold text-[var(--quiz-text-primary)] sm:text-xl">
+    <section>
+      <h2 className="text-base font-semibold text-[var(--quiz-text-primary)] sm:text-lg">
         Quiz Settings
       </h2>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="font-medium text-[var(--quiz-text-secondary)]">
             Question Count
@@ -37,24 +37,26 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
                 Number(event.target.value) as QuizSettings["question_count"],
               )
             }
-            className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none"
+            className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--quiz-ring)]"
           >
             {QUESTION_COUNTS.map((count) => (
               <option key={count} value={count}>
-                {count}
+                {count} Questions
               </option>
             ))}
           </select>
         </label>
 
         <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-[var(--quiz-text-secondary)]">Difficulty</span>
+          <span className="font-medium text-[var(--quiz-text-secondary)]">
+            Difficulty Level
+          </span>
           <select
             value={settings.difficulty}
             onChange={(event) =>
               update("difficulty", event.target.value as QuizSettings["difficulty"])
             }
-            className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none"
+            className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--quiz-ring)]"
           >
             {DIFFICULTIES.map((difficulty) => (
               <option key={difficulty.value} value={difficulty.value}>
@@ -65,11 +67,13 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
         </label>
 
         <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-[var(--quiz-text-secondary)]">Level</span>
+          <span className="font-medium text-[var(--quiz-text-secondary)]">
+            Target Audience
+          </span>
           <select
             value={settings.level}
             onChange={(event) => update("level", event.target.value as QuizSettings["level"])}
-            className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none"
+            className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--quiz-ring)]"
           >
             {LEVELS.map((level) => (
               <option key={level.value} value={level.value}>
@@ -87,7 +91,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
               const val = event.target.value;
               update("time_limit_seconds", val === "" ? null : Number(val));
             }}
-            className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none"
+            className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--quiz-ring)]"
           >
             {TIME_LIMITS.map((tl) => (
               <option key={tl.label} value={tl.value ?? ""}>
@@ -96,38 +100,56 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
             ))}
           </select>
         </label>
+      </div>
 
-        <div className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-[var(--quiz-text-secondary)]">Mode</span>
-          <div className="inline-flex w-fit rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] p-1">
-            {MODES.map((mode) => (
+      <div className="mt-8">
+        <h3 className="text-base font-semibold text-[var(--quiz-text-primary)] sm:text-lg">
+          Quiz Mode
+        </h3>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {MODES.map((mode) => {
+            const selected = settings.mode === mode.value;
+            return (
               <button
                 key={mode.value}
                 type="button"
                 onClick={() => update("mode", mode.value as QuizMode)}
                 className={cn(
-                  "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-                  settings.mode === mode.value
-                    ? "bg-[var(--quiz-primary)] text-white"
-                    : "text-[var(--quiz-text-secondary)] hover:opacity-80",
+                  "flex flex-col rounded-2xl border p-4 text-left transition-colors",
+                  selected
+                    ? "border-[var(--quiz-primary)] bg-[var(--quiz-ring)] ring-1 ring-[var(--quiz-primary)]"
+                    : "border-[var(--quiz-border)] bg-[var(--quiz-background)] hover:border-[var(--quiz-muted)]",
                 )}
               >
-                {mode.label}
+                <span className="text-sm font-semibold text-[var(--quiz-text-primary)]">
+                  {mode.label}
+                </span>
+                <span className="mt-1.5 text-xs leading-relaxed text-[var(--quiz-text-secondary)] sm:text-sm">
+                  {mode.description}
+                </span>
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
 
-      <div className="mt-5">
-        <p className="text-sm font-medium text-[var(--quiz-text-secondary)]">
+      <div className="mt-8">
+        <h3 className="text-base font-semibold text-[var(--quiz-text-primary)] sm:text-lg">
           Source Behavior
+        </h3>
+        <p className="mt-1 text-xs text-[var(--quiz-text-secondary)] sm:text-sm">
+          How strictly the generator should stick to your material.
         </p>
-        <div className="mt-2 space-y-2">
+        <div className="mt-4 space-y-3">
           {SOURCE_BEHAVIORS.map((behavior) => (
             <label
               key={behavior.value}
-              className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-3 py-2.5"
+              className={cn(
+                "flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors",
+                settings.source_behavior === behavior.value
+                  ? "border-[var(--quiz-primary)] bg-[var(--quiz-ring)] ring-1 ring-[var(--quiz-primary)]"
+                  : "border-[var(--quiz-border)] bg-[var(--quiz-background)] hover:border-[var(--quiz-muted)]",
+              )}
             >
               <input
                 type="radio"
@@ -135,13 +157,13 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
                 value={behavior.value}
                 checked={settings.source_behavior === behavior.value}
                 onChange={() => update("source_behavior", behavior.value)}
-                className="mt-0.5 h-4 w-4 accent-[var(--quiz-primary)]"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--quiz-primary)]"
               />
-              <span>
+              <span className="min-w-0">
                 <span className="block text-sm font-semibold text-[var(--quiz-text-primary)]">
                   {behavior.label}
                 </span>
-                <span className="block text-xs text-[var(--quiz-text-secondary)]">
+                <span className="mt-1 block text-xs leading-relaxed text-[var(--quiz-text-secondary)] sm:text-sm">
                   {behavior.description}
                 </span>
               </span>

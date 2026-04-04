@@ -54,6 +54,11 @@ export default function HomePage() {
     setError(null);
     setRequest((previous) => {
       if (nextType === previous.input_type) return previous;
+      const isTextFamily = (t: QuizInputType) =>
+        t === "topic" || t === "text";
+      if (isTextFamily(nextType) && isTextFamily(previous.input_type)) {
+        return { ...previous, input_type: nextType };
+      }
       return {
         ...previous,
         input_type: nextType,
@@ -155,18 +160,18 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[var(--quiz-background)]">
       <Navbar />
-      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+      <main className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
         <section className="mx-auto max-w-3xl text-center">
-          <h1 className="text-3xl font-bold text-[var(--quiz-text-primary)] sm:text-4xl">
+          <h1 className="text-[1.75rem] font-bold tracking-tight text-[var(--quiz-text-primary)] sm:text-4xl sm:leading-tight">
             Turn anything into a quiz
           </h1>
-          <p className="mt-3 text-sm text-[var(--quiz-text-secondary)] sm:text-base">
-            Generate high-quality multiple-choice quizzes from topics, text, files,
-            images, or URLs.
+          <p className="mx-auto mt-4 max-w-2xl text-pretty text-sm leading-relaxed text-[var(--quiz-text-secondary)] sm:text-base">
+            Generate high-quality multiple-choice quizzes instantly from topics,
+            text, files, images, or URLs using advanced AI.
           </p>
         </section>
 
-        <section className="mx-auto mt-7 w-full max-w-3xl rounded-2xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] p-5 shadow-sm sm:p-7">
+        <section className="quiz-main-card mx-auto mt-10 w-full max-w-3xl rounded-2xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] p-6 shadow-[var(--quiz-card-shadow)] sm:p-8">
           {isLoading ? (
             <LoadingState
               primaryText={
@@ -182,6 +187,8 @@ export default function HomePage() {
             />
           ) : (
             <>
+              <SettingsPanel settings={request.settings} onChange={setSettings} />
+
               <InputTabs
                 inputType={request.input_type}
                 content={request.content}
@@ -190,8 +197,6 @@ export default function HomePage() {
                 onFileConvert={onFileConvert}
                 onInputError={setError}
               />
-
-              <SettingsPanel settings={request.settings} onChange={setSettings} />
 
               {error ? (
                 <p className="mt-4 text-sm font-medium text-[var(--quiz-error)]">
@@ -203,9 +208,9 @@ export default function HomePage() {
                 type="button"
                 onClick={onGenerate}
                 disabled={!canGenerate}
-                className="mt-7 w-full rounded-xl bg-[var(--quiz-primary)] px-4 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--quiz-secondary)] disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
+                className="mt-8 w-full rounded-xl bg-[var(--quiz-primary)] px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--quiz-secondary)] disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
               >
-                Generate Quiz
+                Generate Quiz Now
               </button>
             </>
           )}

@@ -3,7 +3,7 @@
 :root {
   --quiz-primary: #4f46e5;
   --quiz-secondary: #6366f1;
-  --quiz-background: #f8fafc;
+  --quiz-background: #f1f5f9;
   --quiz-card: #ffffff;
   --quiz-text-primary: #0f172a;
   --quiz-text-secondary: #475569;
@@ -11,19 +11,33 @@
   --quiz-border: #e2e8f0;
   --quiz-success: #16a34a;
   --quiz-error: #dc2626;
+  --quiz-card-shadow: 0 1px 3px rgb(15 23 42 / 0.06),
+    0 20px 40px -24px rgb(15 23 42 / 0.18);
+  --quiz-ring: rgb(79 70 229 / 0.12);
 }
 
 [data-theme="dark"] {
-  --quiz-primary: #6366f1;
-  --quiz-secondary: #818cf8;
-  --quiz-background: #0f172a;
-  --quiz-card: #1e293b;
-  --quiz-text-primary: #f1f5f9;
+  --quiz-primary: #818cf8;
+  --quiz-secondary: #a5b4fc;
+  --quiz-background: #020617;
+  --quiz-card: #0f172a;
+  --quiz-text-primary: #f8fafc;
   --quiz-text-secondary: #94a3b8;
   --quiz-muted: #64748b;
-  --quiz-border: #334155;
+  --quiz-border: #1e293b;
   --quiz-success: #22c55e;
-  --quiz-error: #ef4444;
+  --quiz-error: #f87171;
+  --quiz-card-shadow: 0 1px 2px rgb(0 0 0 / 0.35),
+    0 24px 48px -28px rgb(0 0 0 / 0.65);
+  --quiz-ring: rgb(129 140 248 / 0.2);
+}
+
+.quiz-main-card {
+  box-shadow: var(--quiz-card-shadow);
+}
+
+[data-theme="dark"] .quiz-main-card {
+  box-shadow: var(--quiz-card-shadow), 0 0 0 1px rgb(148 163 184 / 0.06);
 }
 
 @media print {
