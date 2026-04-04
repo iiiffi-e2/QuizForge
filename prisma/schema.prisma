@@ -19,6 +19,7 @@ model User {
   sessions       Session[]
   authenticators Authenticator[]
   savedQuizzes   SavedQuiz[]
+  quizAttempts   QuizAttempt[]
 }
 
 model Account {
@@ -81,4 +82,18 @@ model SavedQuiz {
   updatedAt DateTime @updatedAt
 
   @@index([userId, createdAt])
+}
+
+model QuizAttempt {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completedAt    DateTime @default(now())
+  score          Int
+  questionCount  Int
+  title          String   @db.VarChar(200)
+  idempotencyKey String   @db.VarChar(128)
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, completedAt])
 }
