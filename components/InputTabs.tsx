@@ -6,6 +6,12 @@ import {
   inputTypeToTabId,
   tabIdToInputType,
 } from "@/lib/constants";
+import {
+  MAX_IMAGE_UPLOAD_COUNT,
+  type ImageUploadItem,
+  parseImageUploadContent,
+  serializeImageUploadPayload,
+} from "@/lib/image-upload-payload";
 import { QuizInputType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
@@ -17,7 +23,9 @@ interface InputTabsProps {
   onContentChange: (content: string) => void;
   onFileConvert: (
     type: "file" | "image",
-    payload: { fileName: string; mimeType: string; dataUrl: string },
+    payload:
+      | { fileName: string; mimeType: string; dataUrl: string }
+      | { images: ImageUploadItem[] },
   ) => void;
   onInputError: (message: string | null) => void;
 }
@@ -44,17 +52,19 @@ export function InputTabs({
   const pasteBtnRef = useRef<HTMLButtonElement>(null);
   const [textSubSlide, setTextSubSlide] = useState({ left: 0, width: 0 });
 
-  const contentData = safeParseContent(content);
+  const fileContentData = safeParseFileContent(content);
+  const imageItems =
+    inputType === "image" ? parseImageUploadContent(content).filter((i) => i.dataUrl.trim()) : [];
 
   const currentFileName =
-    (inputType === "file" || inputType === "image") && contentData?.fileName
-      ? contentData.fileName
-      : "";
+    inputType === "file" && fileContentData?.fileName ? fileContentData.fileName : "";
 
-  const imagePreviewUrl =
-    inputType === "image" && contentData?.dataUrl?.trim()
-      ? contentData.dataUrl
-      : null;
+  const imageSelectionSummary =
+    inputType === "image" && imageItems.length > 0
+      ? imageItems.length === 1
+        ? imageItems[0].fileName || "1 image"
+        : `${imageItems.length} images`
+      : "";
 
   const activeTabId = inputTypeToTabId(inputType);
 
@@ -112,6 +122,64 @@ export function InputTabs({
       window.removeEventListener("resize", measureTextSubSlide);
     };
   }, [measureTextSubSlide, activeTabId]);
+
+  const openImagePicker = () => {
+    if (inputType !== "image") return;
+    const existing = parseImageUploadContent(content);
+    if (existing.length >= MAX_IMAGE_UPLOAD_COUNT) {
+      onInputError(`You can upload at most ${MAX_IMAGE_UPLOAD_COUNT} images.`);
+      return;
+    }
+    onInputError(null);
+    imageInputRef.current?.click();
+  };
+
+  const addImagesFromFiles = async (files: FileList | File[] | null) => {
+    if (!files || inputType !== "image") return;
+    const list = Array.from(files);
+    const existing = parseImageUploadContent(content);
+    const room = MAX_IMAGE_UPLOAD_COUNT - existing.length;
+    if (room <= 0) {
+      onInputError(`You can upload at most ${MAX_IMAGE_UPLOAD_COUNT} images.`);
+      return;
+    }
+
+    const accepted = list.filter(isAcceptedImageFile).slice(0, room);
+    if (accepted.length === 0) {
+      onInputError("Please choose JPG or PNG images.");
+      return;
+    }
+
+    if (list.filter(isAcceptedImageFile).length > room) {
+      onInputError(
+        `Only ${room} more image(s) fit (max ${MAX_IMAGE_UPLOAD_COUNT} total).`,
+      );
+    } else {
+      onInputError(null);
+    }
+
+    try {
+      const newItems: ImageUploadItem[] = [];
+      for (const file of accepted) {
+        const dataUrl = await fileToDataUrl(file);
+        newItems.push({
+          fileName: file.name,
+          mimeType: file.type || "image/jpeg",
+          dataUrl,
+        });
+      }
+      onFileConvert("image", { images: [...existing, ...newItems] });
+    } catch {
+      onInputError("Unable to read an image. Please try different files.");
+    }
+  };
+
+  const removeImageAt = (index: number) => {
+    const existing = parseImageUploadContent(content);
+    const next = existing.filter((_, i) => i !== index);
+    onContentChange(serializeImageUploadPayload(next));
+    onInputError(null);
+  };
 
   const renderContent = () => {
     if (inputType === "topic") {
@@ -175,19 +243,110 @@ export function InputTabs({
       );
     }
 
-    const isFile = inputType === "file";
+    if (inputType === "image") {
+      const atMax = imageItems.length >= MAX_IMAGE_UPLOAD_COUNT;
+      return (
+        <div className="space-y-4">
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={openImagePicker}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openImagePicker();
+              }
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              void addImagesFromFiles(event.dataTransfer.files);
+            }}
+            className={cn(
+              "flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[var(--quiz-border)] bg-[var(--quiz-tab-track)] p-6 text-center transition-colors",
+              atMax
+                ? "cursor-not-allowed opacity-60"
+                : "hover:border-[var(--quiz-brand-500)]/50",
+            )}
+          >
+            <p className="text-sm font-semibold text-[var(--quiz-text-primary)] sm:text-base">
+              {imageItems.length === 0
+                ? "Drag & drop or click to upload images"
+                : "Add more images"}
+            </p>
+            <p className="mt-2 text-xs text-[var(--quiz-text-secondary)] sm:text-sm">
+              JPG, PNG · up to {MAX_IMAGE_UPLOAD_COUNT} images
+            </p>
+            {imageSelectionSummary ? (
+              <p className="mt-3 text-xs font-semibold text-[var(--quiz-brand-600)]">
+                Selected: {imageSelectionSummary}
+              </p>
+            ) : null}
+          </div>
+
+          {imageItems.length > 0 ? (
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {imageItems.map((item, index) => (
+                <li
+                  key={`${item.fileName}-${index}`}
+                  className="group relative overflow-hidden rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] shadow-sm"
+                >
+                  <img
+                    src={item.dataUrl}
+                    alt={item.fileName ? `Preview ${item.fileName}` : `Image ${index + 1}`}
+                    className="aspect-square w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      removeImageAt(index);
+                    }}
+                    className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg bg-black/55 text-white opacity-100 shadow-sm transition hover:bg-black/70 sm:opacity-0 sm:group-hover:opacity-100"
+                    aria-label={`Remove image ${index + 1}`}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path d="M18 6 6 18" />
+                      <path d="m6 6 12 12" />
+                    </svg>
+                  </button>
+                  {item.fileName ? (
+                    <p className="truncate px-2 py-1.5 text-[10px] font-medium text-[var(--quiz-text-secondary)] sm:text-xs">
+                      {item.fileName}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      );
+    }
+
     return (
       <div
         role="button"
         tabIndex={0}
-        onClick={() =>
-          isFile ? fileInputRef.current?.click() : imageInputRef.current?.click()
-        }
+        onClick={() => fileInputRef.current?.click()}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            if (isFile) fileInputRef.current?.click();
-            else imageInputRef.current?.click();
+            fileInputRef.current?.click();
           }
         }}
         className="flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[var(--quiz-border)] bg-[var(--quiz-tab-track)] p-6 text-center transition-colors hover:border-[var(--quiz-brand-500)]/50"
@@ -196,7 +355,7 @@ export function InputTabs({
           Drag & drop or click to upload
         </p>
         <p className="mt-2 text-xs text-[var(--quiz-text-secondary)] sm:text-sm">
-          {isFile ? "Supports PDF, DOCX, TXT" : "Supports JPG, PNG"}
+          Supports PDF, DOCX, TXT
         </p>
         {currentFileName ? (
           <p className="mt-3 text-xs font-semibold text-[var(--quiz-brand-600)]">
@@ -206,8 +365,6 @@ export function InputTabs({
       </div>
     );
   };
-
-  const showImagePreview = inputType === "image" && imagePreviewUrl;
 
   return (
     <section>
@@ -301,20 +458,6 @@ export function InputTabs({
 
       <div className="mt-6">{renderContent()}</div>
 
-      {showImagePreview ? (
-        <div className="mt-4 flex flex-col items-center">
-          <img
-            src={imagePreviewUrl}
-            alt={
-              currentFileName
-                ? `Preview of ${currentFileName}`
-                : "Uploaded image preview"
-            }
-            className="max-h-64 max-w-full rounded-2xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] object-contain shadow-sm"
-          />
-        </div>
-      ) : null}
-
       <input
         ref={fileInputRef}
         type="file"
@@ -334,21 +477,18 @@ export function InputTabs({
         ref={imageInputRef}
         type="file"
         accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+        multiple
         className="hidden"
-        onChange={(event) =>
-          handleFileChange(
-            event.currentTarget.files?.[0],
-            "image",
-            onFileConvert,
-            onInputError,
-          )
-        }
+        onChange={(event) => {
+          void addImagesFromFiles(event.currentTarget.files);
+          event.currentTarget.value = "";
+        }}
       />
     </section>
   );
 }
 
-function safeParseContent(content: string): {
+function safeParseFileContent(content: string): {
   fileName?: string;
   dataUrl?: string;
 } | null {
@@ -363,7 +503,7 @@ function safeParseContent(content: string): {
 
 async function handleFileChange(
   file: File | undefined,
-  type: "file" | "image",
+  type: "file",
   onFileConvert: InputTabsProps["onFileConvert"],
   onInputError: InputTabsProps["onInputError"],
 ): Promise<void> {
@@ -392,4 +532,10 @@ function fileToDataUrl(file: File): Promise<string> {
     reader.onerror = () => reject(new Error("Unable to read file."));
     reader.readAsDataURL(file);
   });
+}
+
+function isAcceptedImageFile(file: File): boolean {
+  const type = file.type.toLowerCase();
+  if (type === "image/jpeg" || type === "image/png") return true;
+  return /\.(jpe?g|png)$/i.test(file.name);
 }

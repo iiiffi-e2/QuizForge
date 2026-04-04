@@ -7,6 +7,12 @@ import { SettingsPanel } from "@/components/SettingsPanel";
 import { DEFAULT_REQUEST } from "@/lib/constants";
 import { generateQuizFromApi } from "@/lib/api-client";
 import {
+  hasImageUploadData,
+  parseImageUploadContent,
+  serializeImageUploadPayload,
+  type ImageUploadItem,
+} from "@/lib/image-upload-payload";
+import {
   hasQuizSourceContent,
   loadRequestDraft,
   saveQuizSession,
@@ -88,11 +94,21 @@ export default function CreateQuizPage() {
     type,
     payload,
   ) => {
-    setRequest((previous) => ({
-      ...previous,
-      input_type: type,
-      content: JSON.stringify(payload),
-    }));
+    setRequest((previous) => {
+      if (type === "image") {
+        const images = (payload as { images: ImageUploadItem[] }).images;
+        return {
+          ...previous,
+          input_type: type,
+          content: serializeImageUploadPayload(images),
+        };
+      }
+      return {
+        ...previous,
+        input_type: type,
+        content: JSON.stringify(payload),
+      };
+    });
   };
 
   const validateRequest = (): string | null => {
@@ -100,11 +116,21 @@ export default function CreateQuizPage() {
       return "Please provide source material before generating a quiz.";
     }
 
-    if (request.input_type === "file" || request.input_type === "image") {
+    if (request.input_type === "file") {
       try {
         const parsed = JSON.parse(request.content) as { dataUrl?: string };
         if (!parsed.dataUrl?.trim()) {
           return "File data is not available (e.g. storage limit). Upload the file again to generate.";
+        }
+      } catch {
+        return "Please provide source material before generating a quiz.";
+      }
+    }
+
+    if (request.input_type === "image") {
+      try {
+        if (!hasImageUploadData(parseImageUploadContent(request.content))) {
+          return "Image data is not available (e.g. storage limit). Upload images again to generate.";
         }
       } catch {
         return "Please provide source material before generating a quiz.";

@@ -11,6 +11,10 @@ import {
   ContentPolicyError,
   serializeQuizForModeration,
 } from "@/lib/content-moderation";
+import {
+  hasImageUploadData,
+  parseImageUploadContent,
+} from "@/lib/image-upload-payload";
 import { QuizGenerationRequest, QuizPayload, QuizQuestion } from "@/lib/types";
 import { normalizeText } from "@/lib/utils";
 
@@ -308,7 +312,26 @@ async function extractFromFilePayload(content: string): Promise<string> {
 }
 
 async function extractFromImagePayload(content: string): Promise<string> {
-  const payload = parseUploadedPayload(content);
+  const images = parseImageUploadContent(content);
+  if (!hasImageUploadData(images)) {
+    throw new Error("No image data in upload payload.");
+  }
+
+  const blocks: string[] = [];
+  for (let index = 0; index < images.length; index += 1) {
+    const item = images[index];
+    if (!item.dataUrl.startsWith("data:")) {
+      throw new Error("Invalid file encoding.");
+    }
+    const label = item.fileName.trim() || `image ${index + 1}`;
+    const extracted = await extractVisionMaterialFromDataUrl(item.dataUrl);
+    blocks.push(`--- IMAGE ${index + 1} (${label}) ---\n${extracted}`);
+  }
+
+  return normalizeText(blocks.join("\n\n"));
+}
+
+async function extractVisionMaterialFromDataUrl(dataUrl: string): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error("OPENAI_API_KEY is missing.");
@@ -334,7 +357,7 @@ async function extractFromImagePayload(content: string): Promise<string> {
           {
             type: "image_url",
             image_url: {
-              url: payload.dataUrl,
+              url: dataUrl,
             },
           },
         ],
@@ -358,7 +381,7 @@ async function extractFromImagePayload(content: string): Promise<string> {
     throw new Error("Image analysis was not valid JSON.");
   }
 
-  return normalizeText(formatImageExtractionMaterial(parsed));
+  return formatImageExtractionMaterial(parsed);
 }
 
 function formatImageExtractionMaterial(payload: unknown): string {
@@ -490,6 +513,9 @@ async function generateQuiz(
       : "- You may expand with general knowledge when useful.",
   ];
   if (request.input_type === "image") {
+    instructionLines.push(
+      "- When the material includes multiple sections labeled \"--- IMAGE N\", treat them as one combined source and distribute questions across images where appropriate.",
+    );
     if (request.settings.source_behavior === "material_only") {
       instructionLines.push(
         "- When input_type is image and source_behavior is material_only: use only facts inferable from the provided material (MAIN SUBJECT, VISUAL DESCRIPTION, NOTABLE DETAILS, READABLE TEXT). Do not invent book or document contents you cannot see.",

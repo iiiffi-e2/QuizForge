@@ -1,12 +1,22 @@
 "use client";
 
 import { STORAGE_KEYS } from "@/lib/constants";
+import {
+  hasImageUploadData,
+  parseImageUploadContent,
+  serializeImageUploadPayload,
+} from "@/lib/image-upload-payload";
 import { slimQuizRequest } from "@/lib/slim-quiz-request";
 import { QuizGenerationRequest, QuizSession } from "@/lib/types";
 
-export type QuizImagePreview = {
+export type QuizImagePreviewItem = {
   dataUrl: string;
   fileName: string;
+};
+
+/** Stored for results/regeneration; supports legacy single-image shape when loading. */
+export type QuizImagePreview = {
+  images: QuizImagePreviewItem[];
 };
 
 /** Stay under typical ~5MB localStorage limits; large entries fail before setItem too. */
@@ -23,13 +33,16 @@ function isQuotaExceeded(error: unknown): boolean {
  */
 export function hasQuizSourceContent(request: QuizGenerationRequest): boolean {
   if (!request.content.trim()) return false;
-  if (request.input_type === "file" || request.input_type === "image") {
+  if (request.input_type === "file") {
     try {
       const parsed = JSON.parse(request.content) as { dataUrl?: string };
       return typeof parsed.dataUrl === "string" && parsed.dataUrl.length > 0;
     } catch {
       return false;
     }
+  }
+  if (request.input_type === "image") {
+    return hasImageUploadData(parseImageUploadContent(request.content));
   }
   return true;
 }
@@ -86,15 +99,13 @@ export function saveQuizSession(session: QuizSession): void {
   if (!hasLocalStorage()) return;
   if (session.request.input_type === "image") {
     try {
-      const parsed = JSON.parse(session.request.content) as {
-        dataUrl?: string;
-        fileName?: string;
-        mimeType?: string;
-      };
-      if (typeof parsed.dataUrl === "string" && parsed.dataUrl.length > 0) {
+      const items = parseImageUploadContent(session.request.content);
+      if (hasImageUploadData(items)) {
         persistQuizImagePreview({
-          dataUrl: parsed.dataUrl,
-          fileName: typeof parsed.fileName === "string" ? parsed.fileName : "",
+          images: items.map((item) => ({
+            dataUrl: item.dataUrl,
+            fileName: item.fileName,
+          })),
         });
       } else {
         clearQuizImagePreview();
@@ -137,20 +148,33 @@ export function loadQuizImagePreview(): QuizImagePreview | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as unknown;
+    if (typeof parsed !== "object" || parsed === null) return null;
+
     if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      !("dataUrl" in parsed) ||
-      typeof (parsed as { dataUrl: unknown }).dataUrl !== "string" ||
-      !(parsed as { dataUrl: string }).dataUrl.trim()
+      "images" in parsed &&
+      Array.isArray((parsed as { images: unknown }).images) &&
+      (parsed as { images: unknown[] }).images.length > 0
     ) {
-      return null;
+      const images = (parsed as { images: unknown[] }).images
+        .map((entry) => {
+          if (typeof entry !== "object" || entry === null) return null;
+          const o = entry as Record<string, unknown>;
+          const dataUrl = typeof o.dataUrl === "string" ? o.dataUrl : "";
+          if (!dataUrl.trim()) return null;
+          const fileName = typeof o.fileName === "string" ? o.fileName : "";
+          return { dataUrl, fileName };
+        })
+        .filter((item): item is QuizImagePreviewItem => item !== null);
+      return images.length > 0 ? { images } : null;
     }
-    const fileName =
-      "fileName" in parsed && typeof (parsed as { fileName: unknown }).fileName === "string"
-        ? (parsed as { fileName: string }).fileName
-        : "";
-    return { dataUrl: (parsed as { dataUrl: string }).dataUrl, fileName };
+
+    const legacy = parsed as { dataUrl?: unknown; fileName?: unknown };
+    if (typeof legacy.dataUrl === "string" && legacy.dataUrl.trim()) {
+      const fileName = typeof legacy.fileName === "string" ? legacy.fileName : "";
+      return { images: [{ dataUrl: legacy.dataUrl, fileName }] };
+    }
+
+    return null;
   } catch {
     return null;
   }
@@ -173,34 +197,31 @@ export function mergeStoredImageIntoRequest(
 ): QuizGenerationRequest {
   if (request.input_type !== "image") return request;
   const preview = loadQuizImagePreview();
-  if (!preview?.dataUrl) return request;
-  try {
-    const parsed = JSON.parse(request.content) as {
-      fileName?: string;
-      mimeType?: string;
-      dataUrl?: string;
-    };
-    if (parsed.dataUrl && parsed.dataUrl.length > 0) {
-      return request;
-    }
+  if (!preview?.images.length) return request;
+
+  const fromRequest = parseImageUploadContent(request.content);
+  if (fromRequest.length === 0) return request;
+
+  const allHaveData = fromRequest.every((item) => item.dataUrl.trim().length > 0);
+  if (allHaveData) return request;
+
+  const merged = fromRequest.map((item, index) => {
+    if (item.dataUrl.trim().length > 0) return item;
+    const fill = preview.images[index];
+    if (!fill?.dataUrl.trim()) return item;
     return {
-      ...request,
-      content: JSON.stringify({
-        fileName: preview.fileName || parsed.fileName || "",
-        mimeType: parsed.mimeType ?? "image/jpeg",
-        dataUrl: preview.dataUrl,
-      }),
+      fileName: item.fileName || fill.fileName,
+      mimeType: item.mimeType || "image/jpeg",
+      dataUrl: fill.dataUrl,
     };
-  } catch {
-    return {
-      ...request,
-      content: JSON.stringify({
-        fileName: preview.fileName,
-        mimeType: "image/jpeg",
-        dataUrl: preview.dataUrl,
-      }),
-    };
-  }
+  });
+
+  if (!hasImageUploadData(merged)) return request;
+
+  return {
+    ...request,
+    content: serializeImageUploadPayload(merged),
+  };
 }
 
 export function loadQuizSession(): QuizSession | null {

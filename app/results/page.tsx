@@ -116,17 +116,22 @@ export default function ResultsPage() {
             Review each question below and regenerate with one click.
           </p>
 
-          {imagePreview?.dataUrl ? (
-            <div className="mt-5 flex justify-center sm:justify-start">
+          {imagePreview?.images[0]?.dataUrl ? (
+            <div className="mt-5 flex flex-col items-center gap-2 sm:items-start">
               <img
-                src={imagePreview.dataUrl}
+                src={imagePreview.images[0].dataUrl}
                 alt={
-                  imagePreview.fileName
-                    ? `Source image: ${imagePreview.fileName}`
+                  imagePreview.images[0].fileName
+                    ? `Source image: ${imagePreview.images[0].fileName}`
                     : "Source image for this quiz"
                 }
                 className="max-h-56 max-w-full rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] object-contain shadow-sm"
               />
+              {imagePreview.images.length > 1 ? (
+                <p className="text-xs text-[var(--quiz-text-secondary)]">
+                  {imagePreview.images.length} source images (showing first)
+                </p>
+              ) : null}
             </div>
           ) : null}
 
