@@ -4,6 +4,7 @@ import { LoadingState } from "@/components/LoadingState";
 import { Navbar } from "@/components/Navbar";
 import { ProgressBar } from "@/components/ProgressBar";
 import { QuizCard } from "@/components/QuizCard";
+import { answerSelectFeedback } from "@/lib/quiz-feedback";
 import { loadQuizSession, loadUserAnswers, saveQuizSession, saveUserAnswers } from "@/lib/quiz-storage";
 import { fetchSharedQuizById } from "@/lib/share-client";
 import { decodeQuizFromUrl } from "@/lib/share";
@@ -125,6 +126,8 @@ function QuizPageInner() {
   const onSelectAnswer = useCallback(
     (choiceIndex: number) => {
       if (!session) return;
+      if (answers[currentIndex] === choiceIndex) return;
+      answerSelectFeedback();
       setAnswers((previous) => {
         const next = [...previous];
         next[currentIndex] = choiceIndex;
@@ -132,7 +135,7 @@ function QuizPageInner() {
         return next;
       });
     },
-    [currentIndex, session],
+    [answers, currentIndex, session],
   );
 
   const onNext = useCallback(() => {
