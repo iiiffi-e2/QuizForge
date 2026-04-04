@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Providers } from "./providers";
 import "./globals.css";
 
 const inter = Inter({
@@ -45,7 +46,9 @@ export default function RootLayout({
           className="quiz-bg-orbs pointer-events-none fixed right-[-10%] bottom-[-10%] h-[40%] min-h-[280px] w-[40%] min-w-[280px] rounded-full bg-[rgb(59_130_246_/0.12)] blur-[100px]"
           aria-hidden
         />
-        <div className="relative z-10 flex min-h-screen flex-col">{children}</div>
+        <div className="relative z-10 flex min-h-screen flex-col">
+          <Providers>{children}</Providers>
+        </div>
       </body>
     </html>
   );
