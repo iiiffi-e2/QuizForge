@@ -272,9 +272,10 @@ export function saveTheme(theme: "light" | "dark"): void {
 }
 
 export function loadTheme(): "light" | "dark" {
-  if (!hasLocalStorage()) return "light";
+  if (!hasLocalStorage()) return "dark";
   const raw = localStorage.getItem(STORAGE_KEYS.THEME);
-  return raw === "dark" ? "dark" : "light";
+  if (raw === "light") return "light";
+  return "dark";
 }
 
 function hasLocalStorage(): boolean {

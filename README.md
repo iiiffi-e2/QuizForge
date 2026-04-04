@@ -59,6 +59,10 @@ Without these variables, **Copy link** still works using the compressed in-URL f
 
 Shared payloads expire after **30 days** (server-side TTL).
 
+## Accounts & saved quizzes (PostgreSQL + Resend)
+
+Sign-in uses **email magic links** (Auth.js) and **saved quizzes** are stored in **PostgreSQL** (e.g. Neon). Set `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `RESEND_API_KEY`, and `AUTH_EMAIL_FROM` in `.env.local` (see `.env.example`). Run migrations: `npm run db:migrate`. Design notes: `docs/superpowers/specs/2026-04-04-accounts-persistence-design.md`.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
