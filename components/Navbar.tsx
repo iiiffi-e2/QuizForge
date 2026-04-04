@@ -46,6 +46,14 @@ export function Navbar() {
         <div className="flex items-center gap-2 sm:gap-4">
           {status === "authenticated" ? (
             <Link
+              href="/profile"
+              className="hidden text-sm font-semibold text-[var(--quiz-brand-600)] transition-colors hover:text-[var(--quiz-brand-700)] sm:inline"
+            >
+              Profile
+            </Link>
+          ) : null}
+          {status === "authenticated" ? (
+            <Link
               href="/library"
               className="hidden text-sm font-semibold text-[var(--quiz-brand-600)] transition-colors hover:text-[var(--quiz-brand-700)] sm:inline"
             >
@@ -64,6 +72,14 @@ export function Navbar() {
           >
             Create
           </Link>
+          {status === "authenticated" ? (
+            <Link
+              href="/profile"
+              className="inline text-sm font-semibold text-[var(--quiz-brand-600)] sm:hidden"
+            >
+              Profile
+            </Link>
+          ) : null}
           {status === "authenticated" ? (
             <Link
               href="/library"

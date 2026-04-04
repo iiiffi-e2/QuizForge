@@ -1,6 +1,6 @@
 # Profile dashboard & quiz attempts — design spec
 
-**Status:** Draft — pending product review  
+**Status:** Approved — implementation in progress  
 **Date:** 2026-04-04  
 **Depends on:** [Accounts & persistence (solo v1)](2026-04-04-accounts-persistence-design.md) — Auth.js `User`, `SavedQuiz`, `/library`
 
