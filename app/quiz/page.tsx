@@ -15,7 +15,7 @@ export default function QuizPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[var(--quiz-background)]">
+        <div className="min-h-screen bg-transparent">
           <Navbar />
           <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
             <LoadingState
@@ -229,7 +229,7 @@ function QuizPageInner() {
 
   if (loadStatus === "error") {
     return (
-      <div className="min-h-screen bg-[var(--quiz-background)]">
+      <div className="min-h-screen bg-transparent">
         <Navbar />
         <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
           <p className="text-base font-medium text-[var(--quiz-error)]">{loadError}</p>
@@ -247,7 +247,7 @@ function QuizPageInner() {
 
   if (loadStatus === "loading" || !session) {
     return (
-      <div className="min-h-screen bg-[var(--quiz-background)]">
+      <div className="min-h-screen bg-transparent">
         <Navbar />
         <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
           <LoadingState
@@ -264,7 +264,7 @@ function QuizPageInner() {
   const selectedAnswer = answers[currentIndex] ?? -1;
 
   return (
-    <div className="min-h-screen bg-[var(--quiz-background)]">
+    <div className="min-h-screen bg-transparent">
       <Navbar />
       <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
         <header>

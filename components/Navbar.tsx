@@ -19,17 +19,35 @@ export function Navbar() {
   };
 
   return (
-    <header className="no-print w-full border-b border-[var(--quiz-border)] bg-[var(--quiz-card)]">
-      <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3.5 sm:px-6">
+    <header className="no-print sticky top-0 z-20 w-full border-b border-[var(--quiz-border)]/50 bg-[var(--quiz-header-glass)] backdrop-blur-md">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link
           href="/"
-          className="text-lg font-bold tracking-tight text-[var(--quiz-text-primary)] transition-colors hover:text-[var(--quiz-secondary)]"
+          className="flex items-center gap-3 transition-opacity hover:opacity-90"
         >
-          QuizForge
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--quiz-brand-500)] to-[var(--quiz-brand-600)] text-white shadow-[var(--quiz-glow)]">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.25"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+          </span>
+          <span className="bg-gradient-to-r from-[var(--quiz-text-primary)] to-[var(--quiz-text-secondary)] bg-clip-text text-xl font-bold tracking-tight text-transparent sm:text-2xl">
+            QuizForge
+          </span>
         </Link>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <span className="rounded-md border border-[var(--quiz-border)] bg-[var(--quiz-background)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--quiz-primary)]">
-            Pro
+        <div className="flex items-center gap-2 sm:gap-4">
+          <span className="rounded-full border border-[var(--quiz-brand-600)]/25 bg-[var(--quiz-brand-600)]/10 px-3 py-1 text-xs font-semibold text-[var(--quiz-brand-600)] sm:text-sm">
+            PRO
           </span>
           <button
             type="button"
@@ -37,17 +55,17 @@ export function Navbar() {
             aria-label={
               theme === "light" ? "Switch to dark mode" : "Switch to light mode"
             }
-            className="flex items-center gap-2 rounded-lg border border-transparent px-2 py-1.5 text-sm text-[var(--quiz-text-secondary)] transition-colors hover:border-[var(--quiz-border)] hover:bg-[var(--quiz-background)]"
+            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--quiz-text-secondary)] transition-colors hover:text-[var(--quiz-brand-600)]"
           >
             <span className="hidden sm:inline">
-              {theme === "light" ? "Dark mode" : "Light mode"}
+              {theme === "light" ? "Dark Mode" : "Light Mode"}
             </span>
-            <span className="rounded-md p-1.5 text-[var(--quiz-muted)] transition-colors hover:bg-[var(--quiz-border)] hover:text-[var(--quiz-text-primary)]">
+            <span className="text-[var(--quiz-muted)]">
               {theme === "light" ? (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
+                  width="20"
+                  height="20"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -61,8 +79,8 @@ export function Navbar() {
               ) : (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
+                  width="20"
+                  height="20"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"

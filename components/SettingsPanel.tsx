@@ -20,8 +20,8 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
   };
 
   return (
-    <section>
-      <h2 className="text-base font-semibold text-[var(--quiz-text-primary)] sm:text-lg">
+    <section className="mt-8 border-t border-[var(--quiz-border)] pt-8">
+      <h2 className="text-lg font-bold text-[var(--quiz-text-primary)] sm:text-2xl">
         Quiz Settings
       </h2>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">

@@ -92,7 +92,7 @@ export default function ResultsPage() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-[var(--quiz-background)]">
+      <div className="min-h-screen bg-transparent">
         <Navbar />
         <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
           <LoadingState
@@ -105,7 +105,7 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--quiz-background)]">
+    <div className="min-h-screen bg-transparent">
       <Navbar />
       <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
         <header className="rounded-2xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] p-5 shadow-sm sm:p-7">

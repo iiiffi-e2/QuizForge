@@ -158,20 +158,23 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--quiz-background)]">
+    <div className="min-h-screen bg-transparent">
       <Navbar />
-      <main className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
         <section className="mx-auto max-w-3xl text-center">
-          <h1 className="text-[1.75rem] font-bold tracking-tight text-[var(--quiz-text-primary)] sm:text-4xl sm:leading-tight">
-            Turn anything into a quiz
+          <h1 className="text-[1.85rem] font-extrabold tracking-tight text-[var(--quiz-text-primary)] sm:text-5xl sm:leading-tight">
+            Turn anything into a{" "}
+            <span className="bg-gradient-to-r from-[var(--quiz-brand-600)] to-[var(--quiz-blue-600)] bg-clip-text text-transparent">
+              quiz
+            </span>
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-pretty text-sm leading-relaxed text-[var(--quiz-text-secondary)] sm:text-base">
+          <p className="mx-auto mt-5 max-w-2xl text-pretty text-base font-medium leading-relaxed text-[var(--quiz-text-secondary)] sm:text-lg">
             Generate high-quality multiple-choice quizzes instantly from topics,
             text, files, images, or URLs using advanced AI.
           </p>
         </section>
 
-        <section className="quiz-main-card mx-auto mt-10 w-full max-w-3xl rounded-2xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] p-6 shadow-[var(--quiz-card-shadow)] sm:p-8">
+        <section className="quiz-main-card mx-auto mt-10 w-full max-w-4xl rounded-3xl border border-white/60 bg-[var(--quiz-card)] p-6 sm:p-10">
           {isLoading ? (
             <LoadingState
               primaryText={
@@ -187,8 +190,6 @@ export default function HomePage() {
             />
           ) : (
             <>
-              <SettingsPanel settings={request.settings} onChange={setSettings} />
-
               <InputTabs
                 inputType={request.input_type}
                 content={request.content}
@@ -197,6 +198,8 @@ export default function HomePage() {
                 onFileConvert={onFileConvert}
                 onInputError={setError}
               />
+
+              <SettingsPanel settings={request.settings} onChange={setSettings} />
 
               {error ? (
                 <p className="mt-4 text-sm font-medium text-[var(--quiz-error)]">
@@ -208,8 +211,27 @@ export default function HomePage() {
                 type="button"
                 onClick={onGenerate}
                 disabled={!canGenerate}
-                className="mt-8 w-full rounded-xl bg-[var(--quiz-primary)] px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--quiz-secondary)] disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
+                className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[var(--quiz-brand-500)] to-[var(--quiz-brand-600)] px-4 py-4 text-base font-bold text-white shadow-[var(--quiz-glow)] transition-all hover:from-[var(--quiz-brand-600)] hover:to-[var(--quiz-brand-700)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100 sm:py-5 sm:text-lg"
               >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="shrink-0 opacity-95"
+                  aria-hidden
+                >
+                  <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                  <path d="M5 3v4" />
+                  <path d="M19 17v4" />
+                  <path d="M3 5h4" />
+                  <path d="M17 19h4" />
+                </svg>
                 Generate Quiz Now
               </button>
             </>
