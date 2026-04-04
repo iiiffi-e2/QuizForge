@@ -21,6 +21,7 @@ import {
 import { createShortShareUrl } from "@/lib/share-client";
 import { encodeQuizToUrl } from "@/lib/share";
 import { QuizSession } from "@/lib/types";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -33,6 +34,7 @@ function useQuizImagePreview(session: QuizSession | null) {
 
 export default function ResultsPage() {
   const router = useRouter();
+  const { status: authStatus } = useSession();
   const [session] = useState<QuizSession | null>(() => loadQuizSession());
   const imagePreview = useQuizImagePreview(session);
   const [answers] = useState<number[]>(() =>
@@ -42,6 +44,8 @@ export default function ResultsPage() {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isCopyingLink, setIsCopyingLink] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session || session.quiz.questions.length === 0) {
@@ -87,6 +91,33 @@ export default function ResultsPage() {
       setError(message);
     } finally {
       setIsRegenerating(false);
+    }
+  };
+
+  const saveToLibrary = async () => {
+    if (!session) return;
+    if (authStatus !== "authenticated") {
+      router.push("/sign-in?callbackUrl=/results");
+      return;
+    }
+    setSaveStatus("loading");
+    setSaveError(null);
+    try {
+      const res = await fetch("/api/saved-quizzes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setSaveStatus("error");
+        setSaveError(typeof data.error === "string" ? data.error : "Could not save.");
+        return;
+      }
+      setSaveStatus("done");
+    } catch {
+      setSaveStatus("error");
+      setSaveError("Could not save.");
     }
   };
 
@@ -164,6 +195,20 @@ export default function ResultsPage() {
             </button>
             <button
               type="button"
+              onClick={saveToLibrary}
+              disabled={saveStatus === "loading" || authStatus === "loading"}
+              className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2.5 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {saveStatus === "loading"
+                ? "Saving…"
+                : saveStatus === "done"
+                  ? "Saved!"
+                  : authStatus === "unauthenticated"
+                    ? "Save to library (sign in)"
+                    : "Save to library"}
+            </button>
+            <button
+              type="button"
               onClick={async () => {
                 if (!session) return;
                 setError(null);
@@ -202,6 +247,9 @@ export default function ResultsPage() {
 
           {error ? (
             <p className="mt-3 text-sm font-medium text-[var(--quiz-error)]">{error}</p>
+          ) : null}
+          {saveError ? (
+            <p className="mt-3 text-sm font-medium text-[var(--quiz-error)]">{saveError}</p>
           ) : null}
         </header>
 

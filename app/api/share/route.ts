@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { slimQuizRequest } from "@/lib/slim-quiz-request";
 import { getRedis } from "@/lib/upstash";
+import { isQuizSession } from "@/lib/quiz-session-guards";
 import { QuizSession } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -9,15 +10,6 @@ export const dynamic = "force-dynamic";
 /** Stay under typical Redis value limits; slimmed payloads only (no base64 uploads). */
 const MAX_PAYLOAD_BYTES = 900_000;
 const TTL_SECONDS = 60 * 60 * 24 * 30;
-
-function isQuizSession(value: unknown): value is QuizSession {
-  if (typeof value !== "object" || value === null) return false;
-  const o = value as Record<string, unknown>;
-  if (typeof o.request !== "object" || o.request === null) return false;
-  if (typeof o.quiz !== "object" || o.quiz === null) return false;
-  const quiz = o.quiz as { questions?: unknown };
-  return Array.isArray(quiz.questions) && quiz.questions.length > 0;
-}
 
 export async function POST(request: Request) {
   const redis = getRedis();

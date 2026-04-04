@@ -1,15 +1,13 @@
 "use client";
 
 import { loadTheme, saveTheme } from "@/lib/quiz-storage";
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export function Navbar() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  useEffect(() => {
-    setTheme(loadTheme());
-  }, []);
+  const { status } = useSession();
+  const [theme, setTheme] = useState<"light" | "dark">(() => loadTheme());
 
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
@@ -46,6 +44,14 @@ export function Navbar() {
           </span>
         </Link>
         <div className="flex items-center gap-2 sm:gap-4">
+          {status === "authenticated" ? (
+            <Link
+              href="/library"
+              className="hidden text-sm font-semibold text-[var(--quiz-brand-600)] transition-colors hover:text-[var(--quiz-brand-700)] sm:inline"
+            >
+              Library
+            </Link>
+          ) : null}
           <Link
             href="/create"
             className="hidden rounded-xl bg-gradient-to-r from-[var(--quiz-brand-500)] to-[var(--quiz-brand-600)] px-4 py-2 text-sm font-bold text-white shadow-[var(--quiz-glow)] transition-all hover:from-[var(--quiz-brand-600)] hover:to-[var(--quiz-brand-700)] active:scale-[0.99] sm:inline-flex"
@@ -58,6 +64,31 @@ export function Navbar() {
           >
             Create
           </Link>
+          {status === "authenticated" ? (
+            <Link
+              href="/library"
+              className="inline text-sm font-semibold text-[var(--quiz-brand-600)] sm:hidden"
+            >
+              Library
+            </Link>
+          ) : null}
+          {status === "unauthenticated" ? (
+            <Link
+              href="/sign-in?callbackUrl=/library"
+              className="rounded-lg px-2 py-1.5 text-sm font-semibold text-[var(--quiz-brand-600)] transition-colors hover:text-[var(--quiz-brand-700)]"
+            >
+              Sign in
+            </Link>
+          ) : null}
+          {status === "authenticated" ? (
+            <button
+              type="button"
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--quiz-text-secondary)] transition-colors hover:text-[var(--quiz-brand-600)]"
+            >
+              Sign out
+            </button>
+          ) : null}
           <span className="rounded-full border border-[var(--quiz-brand-600)]/25 bg-[var(--quiz-brand-600)]/10 px-3 py-1 text-xs font-semibold text-[var(--quiz-brand-600)] sm:text-sm">
             PRO
           </span>
