@@ -52,14 +52,6 @@ export function Navbar() {
               Profile
             </Link>
           ) : null}
-          {status === "authenticated" ? (
-            <Link
-              href="/library"
-              className="hidden text-sm font-semibold text-[var(--quiz-brand-600)] transition-colors hover:text-[var(--quiz-brand-700)] sm:inline"
-            >
-              Library
-            </Link>
-          ) : null}
           <Link
             href="/create"
             className="hidden rounded-xl bg-gradient-to-r from-[var(--quiz-brand-500)] to-[var(--quiz-brand-600)] px-4 py-2 text-sm font-bold text-white shadow-[var(--quiz-glow)] transition-all hover:from-[var(--quiz-brand-600)] hover:to-[var(--quiz-brand-700)] active:scale-[0.99] sm:inline-flex"
@@ -80,17 +72,9 @@ export function Navbar() {
               Profile
             </Link>
           ) : null}
-          {status === "authenticated" ? (
-            <Link
-              href="/library"
-              className="inline text-sm font-semibold text-[var(--quiz-brand-600)] sm:hidden"
-            >
-              Library
-            </Link>
-          ) : null}
           {status === "unauthenticated" ? (
             <Link
-              href="/sign-in?callbackUrl=/library"
+              href="/sign-in?callbackUrl=/profile"
               className="rounded-lg px-2 py-1.5 text-sm font-semibold text-[var(--quiz-brand-600)] transition-colors hover:text-[var(--quiz-brand-700)]"
             >
               Sign in

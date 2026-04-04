@@ -8,7 +8,7 @@ import { Suspense, useState } from "react";
 
 function SignInForm() {
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/library";
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/profile";
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);

@@ -69,26 +69,29 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6">
-      <h1 className="mb-2 text-2xl font-bold text-[var(--quiz-text-primary)]">Library</h1>
-      <p className="mb-8 text-sm text-[var(--quiz-text-secondary)]">
-        Quizzes you&apos;ve saved to your account.
+    <div>
+      <h2 className="text-lg font-semibold text-[var(--quiz-text-primary)]">
+        Saved quizzes
+      </h2>
+      <p className="mt-2 text-sm text-[var(--quiz-text-secondary)]">
+        Quizzes you&apos;ve saved to your account. Open to take again, or delete
+        when you&apos;re done.
       </p>
       {error ? (
-        <p className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+        <p className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300">
           {error}
         </p>
       ) : null}
       {items.length === 0 ? (
-        <p className="text-[var(--quiz-text-secondary)]">
+        <p className="mt-4 text-[var(--quiz-text-secondary)]">
           Nothing saved yet.{" "}
           <Link href="/create" className="font-medium text-[var(--quiz-brand-600)] hover:underline">
             Create a quiz
           </Link>
-          , then use &quot;Save to library&quot; on the results screen.
+          , then use &quot;Save to profile&quot; on the results screen.
         </p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="mt-4 flex flex-col gap-3">
           {items.map((item) => (
             <li
               key={item.id}
@@ -142,6 +145,6 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
           ))}
         </ul>
       )}
-    </main>
+    </div>
   );
 }

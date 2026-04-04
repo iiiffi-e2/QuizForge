@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LibraryClient } from "@/components/LibraryClient";
 import { Navbar } from "@/components/Navbar";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -12,7 +13,7 @@ export default async function ProfilePage() {
 
   const userId = session.user.id;
 
-  const [count, recent, sums] = await Promise.all([
+  const [count, recent, sums, savedItems] = await Promise.all([
     prisma.quizAttempt.count({ where: { userId } }),
     prisma.quizAttempt.findMany({
       where: { userId },
@@ -29,6 +30,11 @@ export default async function ProfilePage() {
     prisma.quizAttempt.aggregate({
       where: { userId },
       _sum: { score: true, questionCount: true },
+    }),
+    prisma.savedQuiz.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, title: true, createdAt: true },
     }),
   ]);
 
@@ -77,18 +83,22 @@ export default async function ProfilePage() {
               >
                 Create quiz
               </Link>
-              <Link
-                href="/library"
-                className="rounded-xl border border-white/80 bg-white/10 px-4 py-2.5 text-sm font-bold text-white backdrop-blur-sm"
-              >
-                Library
-              </Link>
             </div>
           </div>
         </section>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
+            <section className="rounded-2xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] p-5 sm:p-6">
+              <LibraryClient
+                initialItems={savedItems.map((i) => ({
+                  id: i.id,
+                  title: i.title,
+                  createdAt: i.createdAt.toISOString(),
+                }))}
+              />
+            </section>
+
             <section className="rounded-2xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] p-5 sm:p-6">
               <h2 className="text-lg font-semibold text-[var(--quiz-text-primary)]">
                 Recent activity
@@ -117,22 +127,6 @@ export default async function ProfilePage() {
                   ))}
                 </ul>
               )}
-            </section>
-
-            <section className="rounded-2xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] p-5 sm:p-6">
-              <h2 className="text-lg font-semibold text-[var(--quiz-text-primary)]">
-                Library
-              </h2>
-              <p className="mt-2 text-sm text-[var(--quiz-text-secondary)]">
-                Saved quizzes live in your library—open, delete, or share from
-                there.
-              </p>
-              <Link
-                href="/library"
-                className="mt-4 inline-flex rounded-xl bg-[var(--quiz-primary)] px-4 py-2.5 text-sm font-semibold text-white"
-              >
-                Go to library
-              </Link>
             </section>
           </div>
 

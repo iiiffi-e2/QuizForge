@@ -261,8 +261,8 @@ export default function ResultsPage() {
                 : saveStatus === "done"
                   ? "Saved!"
                   : authStatus === "unauthenticated"
-                    ? "Save to library (sign in)"
-                    : "Save to library"}
+                    ? "Save to profile (sign in)"
+                    : "Save to profile"}
             </button>
             <button
               type="button"

@@ -21,6 +21,7 @@
 /build
 
 # misc
+.superpowers/
 .DS_Store
 *.pem
 
