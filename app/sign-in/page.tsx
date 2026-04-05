@@ -10,8 +10,9 @@ function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/profile";
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [magicEmail, setMagicEmail] = useState("");
+  const [pwEmail, setPwEmail] = useState("");
+  const [pwPassword, setPwPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [pwStatus, setPwStatus] = useState<"idle" | "loading" | "error">("idle");
@@ -21,7 +22,7 @@ function SignInForm() {
     e.preventDefault();
     setStatus("loading");
     setMessage(null);
-    const trimmed = email.trim();
+    const trimmed = magicEmail.trim();
     if (!trimmed) {
       setStatus("error");
       setMessage("Enter your email address.");
@@ -41,15 +42,15 @@ function SignInForm() {
     e.preventDefault();
     setPwStatus("loading");
     setPwMessage(null);
-    const trimmed = email.trim();
-    if (!trimmed || !password) {
+    const trimmed = pwEmail.trim();
+    if (!trimmed || !pwPassword) {
       setPwStatus("error");
       setPwMessage("Enter your email and password.");
       return;
     }
     const result = await signIn("credentials", {
       email: trimmed,
-      password,
+      password: pwPassword,
       redirect: false,
       callbackUrl,
     });
@@ -67,21 +68,24 @@ function SignInForm() {
     <main className="mx-auto w-full max-w-md px-4 py-16 sm:px-6">
       <h1 className="mb-2 text-2xl font-bold text-[var(--quiz-text-primary)]">Sign in</h1>
       <p className="mb-8 text-sm text-[var(--quiz-text-secondary)]">
-        Use a magic link, or sign in with a password if you&apos;ve added one on{" "}
+        By default we&apos;ll email you a magic link. Prefer a password? Set one in{" "}
         <Link href="/profile/edit" className="font-medium text-[var(--quiz-brand-600)] hover:underline">
           Edit profile
         </Link>
-        .
+        , then use email and password below.
       </p>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
+        <p className="text-sm font-medium text-[var(--quiz-text-primary)]">
+          Magic link (recommended)
+        </p>
         <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--quiz-text-primary)]">
           Email
           <input
             type="email"
-            name="email"
+            name="magicEmail"
             autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={magicEmail}
+            onChange={(e) => setMagicEmail(e.target.value)}
             className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-surface)] px-4 py-3 text-[var(--quiz-text-primary)] outline-none ring-[var(--quiz-brand-500)]/30 transition-shadow focus:ring-2"
             placeholder="you@example.com"
             disabled={status === "loading"}
@@ -114,16 +118,32 @@ function SignInForm() {
 
       <form onSubmit={onPasswordSubmit} className="flex flex-col gap-4">
         <p className="text-sm font-medium text-[var(--quiz-text-primary)]">
-          Sign in with password
+          Email and password
         </p>
+        <p className="text-xs text-[var(--quiz-text-secondary)]">
+          For accounts that have set a password (optional alternative to a magic link).
+        </p>
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--quiz-text-primary)]">
+          Email
+          <input
+            type="email"
+            name="pwEmail"
+            autoComplete="email"
+            value={pwEmail}
+            onChange={(e) => setPwEmail(e.target.value)}
+            className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-surface)] px-4 py-3 text-[var(--quiz-text-primary)] outline-none ring-[var(--quiz-brand-500)]/30 transition-shadow focus:ring-2"
+            placeholder="you@example.com"
+            disabled={pwStatus === "loading"}
+          />
+        </label>
         <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--quiz-text-primary)]">
           Password
           <input
             type="password"
             name="password"
             autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={pwPassword}
+            onChange={(e) => setPwPassword(e.target.value)}
             className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-surface)] px-4 py-3 text-[var(--quiz-text-primary)] outline-none ring-[var(--quiz-brand-500)]/30 transition-shadow focus:ring-2"
             placeholder="••••••••"
             disabled={pwStatus === "loading"}
@@ -134,7 +154,7 @@ function SignInForm() {
           disabled={pwStatus === "loading" || status === "loading"}
           className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-3 text-sm font-bold text-[var(--quiz-text-primary)] transition-colors hover:bg-[var(--quiz-surface)] disabled:opacity-60"
         >
-          {pwStatus === "loading" ? "Signing in…" : "Sign in with password"}
+          {pwStatus === "loading" ? "Signing in…" : "Sign in"}
         </button>
       </form>
       {pwMessage ? (
