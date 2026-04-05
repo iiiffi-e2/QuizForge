@@ -1,6 +1,6 @@
 # Reach & sharing (SEO, embeds, social previews) — design spec
 
-**Status:** Approved — pending written spec review before implementation planning  
+**Status:** Approved — implementation planning complete (`docs/superpowers/plans/2026-04-04-reach-sharing-seo-embeds.md`)  
 **Date:** 2026-04-04  
 **Depends on:** Existing **short share links** (`/quiz?sid=…`, Upstash Redis, `app/api/share`), **`QuizSession`** shape (`lib/types.ts`)
 
