@@ -59,6 +59,26 @@ Without these variables, **Copy link** still works using the compressed in-URL f
 
 Shared payloads expire after **30 days** (server-side TTL).
 
+## Embeds (third-party sites)
+
+Paste a **container** and the **embed script** on any page where you control HTML. The script loads `/embed/v1.js` from your deployment and injects an iframe to `/quiz?sid=…&embed=1`.
+
+Replace `YOUR_SITE` with your real origin (e.g. `https://your-app.vercel.app`):
+
+```html
+<div class="quizforge-embed" data-sid="YOUR_SHARE_ID"></div>
+<script src="YOUR_SITE/embed/v1.js" async defer></script>
+```
+
+The **`sid`** is the short id from a **Copy link** URL (`/quiz?sid=…`). Long `?q=…` share URLs cannot be embedded.
+
+**CSP:** allow your QuizForge origin in `script-src` and `frame-src` (or `child-src`), for example:
+
+```
+script-src 'self' https://your-app.vercel.app;
+frame-src https://your-app.vercel.app;
+```
+
 ## Accounts & saved quizzes (PostgreSQL + Resend)
 
 Sign-in uses **email magic links** (Auth.js) and **saved quizzes** are stored in **PostgreSQL** (e.g. Neon). Set `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `RESEND_API_KEY`, and `AUTH_EMAIL_FROM` in `.env.local` (see `.env.example`). Run migrations: `npm run db:migrate`. Design notes: `docs/superpowers/specs/2026-04-04-accounts-persistence-design.md`.
