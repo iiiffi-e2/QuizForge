@@ -1,10 +1,12 @@
 "use client";
 
+import { createShortShareUrl } from "@/lib/share-client";
+import { encodeQuizToUrl } from "@/lib/share";
 import { saveQuizSession, saveUserAnswers } from "@/lib/quiz-storage";
 import type { QuizSession } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type LibraryItem = {
   id: string;
@@ -16,8 +18,26 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [sharePendingId, setSharePendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (toastClearRef.current) clearTimeout(toastClearRef.current);
+    };
+  }, []);
+
+  function showToast(message: string) {
+    if (toastClearRef.current) clearTimeout(toastClearRef.current);
+    setToast(message);
+    toastClearRef.current = setTimeout(() => {
+      setToast(null);
+      toastClearRef.current = null;
+    }, 2500);
+  }
 
   async function openSaved(id: string) {
     setError(null);
@@ -47,6 +67,39 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
     }
   }
 
+  async function shareSaved(id: string) {
+    setError(null);
+    setSharePendingId(id);
+    try {
+      const res = await fetch(`/api/saved-quizzes/${encodeURIComponent(id)}`);
+      const data = (await res.json()) as { session?: QuizSession; error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "Could not create share link.");
+        return;
+      }
+      if (!data.session?.quiz?.questions?.length) {
+        setError("Could not create share link.");
+        return;
+      }
+      let url: string | null = await createShortShareUrl(data.session);
+      if (!url) {
+        url = encodeQuizToUrl(data.session);
+      }
+      if (!url) {
+        setError(
+          "This quiz is too large to share as a link. Try fewer questions or a shorter source.",
+        );
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      showToast("Link copied");
+    } catch {
+      setError("Could not copy link.");
+    } finally {
+      setSharePendingId(null);
+    }
+  }
+
   async function deleteSaved(id: string) {
     setError(null);
     setPendingId(id);
@@ -68,8 +121,19 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
     }
   }
 
+  const busy = pendingId !== null || sharePendingId !== null;
+
   return (
-    <div>
+    <div className="relative">
+      {toast ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-3 text-sm font-medium text-[var(--quiz-text-primary)] shadow-lg"
+        >
+          {toast}
+        </div>
+      ) : null}
       <h2 className="text-lg font-semibold text-[var(--quiz-text-primary)]">
         Saved quizzes
       </h2>
@@ -107,17 +171,25 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
                 <button
                   type="button"
                   onClick={() => openSaved(item.id)}
-                  disabled={pendingId !== null}
+                  disabled={busy}
                   className="rounded-lg bg-gradient-to-r from-[var(--quiz-brand-500)] to-[var(--quiz-brand-600)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--quiz-glow)] disabled:opacity-60"
                 >
                   {pendingId === item.id ? "Opening…" : "Open"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => shareSaved(item.id)}
+                  disabled={busy}
+                  className="rounded-lg border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80 disabled:opacity-60"
+                >
+                  {sharePendingId === item.id ? "Copying…" : "Share link"}
                 </button>
                 {confirmDeleteId === item.id ? (
                   <>
                     <button
                       type="button"
                       onClick={() => deleteSaved(item.id)}
-                      disabled={pendingId !== null}
+                      disabled={busy}
                       className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-700 dark:text-red-300"
                     >
                       Confirm delete
@@ -134,7 +206,7 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
                   <button
                     type="button"
                     onClick={() => setConfirmDeleteId(item.id)}
-                    disabled={pendingId !== null}
+                    disabled={busy}
                     className="rounded-lg border border-[var(--quiz-border)] px-4 py-2 text-sm font-medium text-[var(--quiz-text-secondary)] hover:text-[var(--quiz-text-primary)]"
                   >
                     Delete
