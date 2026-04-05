@@ -1,6 +1,25 @@
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
+import { SiteJsonLd } from "@/components/SiteJsonLd";
+import { getSiteUrl } from "@/lib/site-url";
+import type { Metadata } from "next";
 import Link from "next/link";
+
+const site = getSiteUrl();
+
+export const metadata: Metadata = {
+  alternates: { canonical: site.toString() },
+  openGraph: {
+    title: "QuizForge",
+    description: "Turn anything into a quiz",
+    url: site.toString(),
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "QuizForge",
+    description: "Turn anything into a quiz",
+  },
+};
 
 const useCases = [
   {
@@ -77,6 +96,7 @@ function UseCaseIcon({ children }: { children: React.ReactNode }) {
 export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-transparent">
+      <SiteJsonLd />
       <Navbar />
       <main>
         <section className="relative mx-auto max-w-5xl px-4 pb-16 pt-10 sm:px-6 sm:pb-24 sm:pt-14 lg:pt-20">

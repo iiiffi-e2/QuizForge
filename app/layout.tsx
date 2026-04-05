@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { getSiteUrl } from "@/lib/site-url";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -9,9 +10,24 @@ const inter = Inter({
   display: "swap",
 });
 
+const site = getSiteUrl();
+
 export const metadata: Metadata = {
-  title: "QuizForge",
+  metadataBase: site,
+  title: {
+    default: "QuizForge",
+    template: "%s | QuizForge",
+  },
   description: "Turn anything into a quiz",
+  openGraph: {
+    type: "website",
+    siteName: "QuizForge",
+    locale: "en_US",
+    url: site,
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({

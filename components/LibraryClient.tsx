@@ -1,5 +1,6 @@
 "use client";
 
+import { buildEmbedSnippet, extractShareSidFromUrl } from "@/lib/embed-snippet";
 import { createShortShareUrl } from "@/lib/share-client";
 import { encodeQuizToUrl } from "@/lib/share";
 import { saveQuizSession, saveUserAnswers } from "@/lib/quiz-storage";
@@ -68,6 +69,7 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
   const [items, setItems] = useState(initialItems);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [sharePendingId, setSharePendingId] = useState<string | null>(null);
+  const [embedPendingId, setEmbedPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -113,6 +115,43 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
       setError("Could not open quiz.");
     } finally {
       setPendingId(null);
+    }
+  }
+
+  async function copyEmbedSaved(id: string) {
+    setError(null);
+    setEmbedPendingId(id);
+    try {
+      const res = await fetch(`/api/saved-quizzes/${encodeURIComponent(id)}`);
+      const data = (await res.json()) as { session?: QuizSession; error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "Could not load quiz.");
+        return;
+      }
+      if (!data.session?.quiz?.questions?.length) {
+        setError("Could not load quiz.");
+        return;
+      }
+      const url: string | null = await createShortShareUrl(data.session);
+      if (!url) {
+        setError(
+          "Embeds need a short share link. Configure Upstash Redis (see README).",
+        );
+        return;
+      }
+      const sid = extractShareSidFromUrl(url);
+      if (!sid || typeof window === "undefined") {
+        setError("Could not build embed snippet.");
+        return;
+      }
+      await navigator.clipboard.writeText(
+        buildEmbedSnippet(window.location.origin, sid),
+      );
+      showToast("Embed code copied");
+    } catch {
+      setError("Could not copy embed code.");
+    } finally {
+      setEmbedPendingId(null);
     }
   }
 
@@ -174,7 +213,7 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
     }
   }
 
-  const busy = pendingId !== null || sharePendingId !== null;
+  const busy = pendingId !== null || sharePendingId !== null || embedPendingId !== null;
 
   return (
     <div className="relative">
@@ -240,6 +279,14 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
                       ? "Sharing…"
                       : "Copying…"
                     : "Share link"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => copyEmbedSaved(item.id)}
+                  disabled={busy}
+                  className="rounded-lg border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80 disabled:opacity-60"
+                >
+                  {embedPendingId === item.id ? "Copying…" : "Embed code"}
                 </button>
                 {confirmDeleteId === item.id ? (
                   <>

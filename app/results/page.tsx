@@ -18,6 +18,7 @@ import {
   saveRequestDraft,
   saveUserAnswers,
 } from "@/lib/quiz-storage";
+import { buildEmbedSnippet, extractShareSidFromUrl } from "@/lib/embed-snippet";
 import { createShortShareUrl } from "@/lib/share-client";
 import { encodeQuizToUrl } from "@/lib/share";
 import { QuizSession } from "@/lib/types";
@@ -44,6 +45,9 @@ export default function ResultsPage() {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isCopyingLink, setIsCopyingLink] = useState(false);
+  const [lastShareSid, setLastShareSid] = useState<string | null>(null);
+  const [embedCopied, setEmbedCopied] = useState(false);
+  const [isCopyingEmbed, setIsCopyingEmbed] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
   const [attemptPersistError, setAttemptPersistError] = useState<string | null>(null);
@@ -281,6 +285,8 @@ export default function ResultsPage() {
                     );
                     return;
                   }
+                  const sid = extractShareSidFromUrl(url);
+                  setLastShareSid(sid);
                   await navigator.clipboard.writeText(url);
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
@@ -292,6 +298,47 @@ export default function ResultsPage() {
               className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2.5 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {copied ? "Copied!" : isCopyingLink ? "Copying…" : "Copy Link"}
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!session) return;
+                setError(null);
+                setIsCopyingEmbed(true);
+                try {
+                  let sid = lastShareSid;
+                  if (!sid) {
+                    let url: string | null = await createShortShareUrl(session);
+                    if (!url) {
+                      url = encodeQuizToUrl(session);
+                    }
+                    if (url) {
+                      sid = extractShareSidFromUrl(url);
+                      setLastShareSid(sid);
+                    }
+                  }
+                  if (!sid) {
+                    setError(
+                      "Embeds need a short share link. Configure Upstash Redis (see README) or copy link first after short links work.",
+                    );
+                    return;
+                  }
+                  const snippet = buildEmbedSnippet(window.location.origin, sid);
+                  await navigator.clipboard.writeText(snippet);
+                  setEmbedCopied(true);
+                  setTimeout(() => setEmbedCopied(false), 2000);
+                } finally {
+                  setIsCopyingEmbed(false);
+                }
+              }}
+              disabled={isCopyingEmbed}
+              className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2.5 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {embedCopied
+                ? "Embed copied!"
+                : isCopyingEmbed
+                  ? "Copying…"
+                  : "Copy embed code"}
             </button>
             <button
               type="button"
