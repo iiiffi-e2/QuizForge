@@ -14,6 +14,42 @@ export type LibraryItem = {
   createdAt: string;
 };
 
+function isAbortError(err: unknown): boolean {
+  if (err instanceof DOMException && err.name === "AbortError") return true;
+  if (typeof err === "object" && err !== null && "name" in err) {
+    return (err as { name: string }).name === "AbortError";
+  }
+  return false;
+}
+
+/**
+ * Uses the Web Share API (native sheet on many Android / iOS browsers) when available;
+ * otherwise copies to the clipboard.
+ */
+async function shareOrCopyUrl(
+  url: string,
+  title: string,
+): Promise<"shared" | "copied" | "aborted"> {
+  if (typeof navigator.share === "function") {
+    try {
+      await navigator.share({
+        title: title.slice(0, 200) || "Quiz",
+        text: "Take this quiz on QuizForge",
+        url,
+      });
+      return "shared";
+    } catch (err) {
+      if (isAbortError(err)) return "aborted";
+      // Unsupported share data or other failure — fall back to clipboard
+    }
+  }
+  if (typeof navigator.clipboard?.writeText === "function") {
+    await navigator.clipboard.writeText(url);
+    return "copied";
+  }
+  throw new Error("Cannot share or copy");
+}
+
 export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] }) {
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
@@ -67,7 +103,7 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
     }
   }
 
-  async function shareSaved(id: string) {
+  async function shareSaved(id: string, displayTitle: string) {
     setError(null);
     setSharePendingId(id);
     try {
@@ -91,10 +127,14 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
         );
         return;
       }
-      await navigator.clipboard.writeText(url);
-      showToast("Link copied");
+      const outcome = await shareOrCopyUrl(url, displayTitle);
+      if (outcome === "shared") {
+        showToast("Link shared");
+      } else if (outcome === "copied") {
+        showToast("Link copied");
+      }
     } catch {
-      setError("Could not copy link.");
+      setError("Could not share or copy link.");
     } finally {
       setSharePendingId(null);
     }
@@ -178,11 +218,11 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
                 </button>
                 <button
                   type="button"
-                  onClick={() => shareSaved(item.id)}
+                  onClick={() => shareSaved(item.id, item.title)}
                   disabled={busy}
                   className="rounded-lg border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80 disabled:opacity-60"
                 >
-                  {sharePendingId === item.id ? "Copying…" : "Share link"}
+                  {sharePendingId === item.id ? "Sharing…" : "Share link"}
                 </button>
                 {confirmDeleteId === item.id ? (
                   <>
