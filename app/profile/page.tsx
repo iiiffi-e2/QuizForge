@@ -176,6 +176,12 @@ export default async function ProfilePage() {
                   {session.user.email}
                 </p>
               ) : null}
+              <Link
+                href="/profile/edit"
+                className="mt-3 inline-block text-sm font-medium text-[var(--quiz-brand-600)] hover:underline"
+              >
+                Edit profile
+              </Link>
             </section>
           </aside>
         </div>
