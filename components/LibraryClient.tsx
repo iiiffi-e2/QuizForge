@@ -22,15 +22,28 @@ function isAbortError(err: unknown): boolean {
   return false;
 }
 
+/** Desktop / laptop: use clipboard only. Mobile / tablet: allow native share sheet. */
+function isLikelyMobileOrTablet(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const uaData = (navigator as Navigator & { userAgentData?: { mobile?: boolean } })
+    .userAgentData;
+  if (uaData && typeof uaData.mobile === "boolean") {
+    return uaData.mobile;
+  }
+  return (
+    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
 /**
- * Uses the Web Share API (native sheet on many Android / iOS browsers) when available;
- * otherwise copies to the clipboard.
+ * On phones/tablets, uses the Web Share API when available; on desktop, copies to the clipboard only.
  */
 async function shareOrCopyUrl(
   url: string,
   title: string,
 ): Promise<"shared" | "copied" | "aborted"> {
-  if (typeof navigator.share === "function") {
+  if (typeof navigator.share === "function" && isLikelyMobileOrTablet()) {
     try {
       await navigator.share({
         title: title.slice(0, 200) || "Quiz",
@@ -222,7 +235,11 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
                   disabled={busy}
                   className="rounded-lg border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80 disabled:opacity-60"
                 >
-                  {sharePendingId === item.id ? "Sharing…" : "Share link"}
+                  {sharePendingId === item.id
+                    ? isLikelyMobileOrTablet()
+                      ? "Sharing…"
+                      : "Copying…"
+                    : "Share link"}
                 </button>
                 {confirmDeleteId === item.id ? (
                   <>
