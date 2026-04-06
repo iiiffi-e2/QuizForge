@@ -10,7 +10,7 @@ function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/profile";
-  const [email, setEmail] = useState("");
+  const [magicEmail, setMagicEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPasswordSignIn, setShowPasswordSignIn] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
@@ -22,7 +22,7 @@ function SignInForm() {
     e.preventDefault();
     setStatus("loading");
     setMessage(null);
-    const trimmed = email.trim();
+    const trimmed = magicEmail.trim();
     if (!trimmed) {
       setStatus("error");
       setMessage("Enter your email address.");
@@ -42,7 +42,7 @@ function SignInForm() {
     e.preventDefault();
     setPwStatus("loading");
     setPwMessage(null);
-    const trimmed = email.trim();
+    const trimmed = magicEmail.trim();
     if (!trimmed || !password) {
       setPwStatus("error");
       setPwMessage("Enter your email and password.");
@@ -73,17 +73,20 @@ function SignInForm() {
       </h1>
       <p className="mb-8 text-sm leading-relaxed text-[var(--quiz-text-secondary)]">
         Enter your email and we&apos;ll send you a link to sign in or get started—no password
-        required.
+        required. That&apos;s the usual way to join or come back.
       </p>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--quiz-text-primary)]">
+        <p className="text-sm font-medium text-[var(--quiz-text-primary)]">
           Email me a sign-in link
+        </p>
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--quiz-text-primary)]">
+          Email
           <input
             type="email"
-            name="email"
+            name="magicEmail"
             autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={magicEmail}
+            onChange={(e) => setMagicEmail(e.target.value)}
             className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-surface)] px-4 py-3 text-[var(--quiz-text-primary)] outline-none ring-[var(--quiz-brand-500)]/30 transition-shadow focus:ring-2"
             placeholder="you@example.com"
             disabled={status === "loading"}
@@ -119,9 +122,12 @@ function SignInForm() {
 
       {showPasswordSignIn ? (
         <form onSubmit={onPasswordSubmit} className="mt-6 flex flex-col gap-4 border-t border-[var(--quiz-border)] pt-6">
+          <p className="text-sm font-medium text-[var(--quiz-text-primary)]">
+            Sign in with email and password
+          </p>
           <p className="text-xs leading-relaxed text-[var(--quiz-text-secondary)]">
-            If you already use a password with this account, enter it below. The email above is
-            used for both options.
+            Optional: if you already use a password with QuizForge, enter it below. The email field
+            above is used for both the magic link and password sign-in.
           </p>
           <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--quiz-text-primary)]">
             Password
