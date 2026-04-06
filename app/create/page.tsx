@@ -1,5 +1,6 @@
 "use client";
 
+import { ClassCodeEntry } from "@/components/ClassCodeEntry";
 import { InputTabs } from "@/components/InputTabs";
 import { LoadingState } from "@/components/LoadingState";
 import { Navbar } from "@/components/Navbar";
@@ -200,7 +201,11 @@ export default function CreateQuizPage() {
           </p>
         </section>
 
-        <section className="quiz-main-card mx-auto mt-10 w-full max-w-4xl rounded-3xl border border-white/60 bg-[var(--quiz-card)] p-6 sm:p-10">
+        <div className="mx-auto mt-8 w-full max-w-xl px-0 sm:px-2">
+          <ClassCodeEntry variant="compact" />
+        </div>
+
+        <section className="quiz-main-card mx-auto mt-8 w-full max-w-4xl rounded-3xl border border-white/60 bg-[var(--quiz-card)] p-6 sm:p-10">
           {isLoading ? (
             <LoadingState
               primaryText={

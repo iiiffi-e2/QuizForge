@@ -1,3 +1,4 @@
+import { ClassCodeEntry } from "@/components/ClassCodeEntry";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { SiteJsonLd } from "@/components/SiteJsonLd";
@@ -138,6 +139,9 @@ export default function LandingPage() {
                   <path d="m12 5 7 7-7 7" />
                 </svg>
               </Link>
+            </div>
+            <div className="mx-auto mt-10 w-full max-w-md text-left">
+              <ClassCodeEntry variant="prominent" />
             </div>
           </div>
         </section>
