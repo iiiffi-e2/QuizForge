@@ -12,6 +12,7 @@ function SignInForm() {
   const callbackUrl = searchParams.get("callbackUrl") ?? "/profile";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPasswordSignIn, setShowPasswordSignIn] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [pwStatus, setPwStatus] = useState<"idle" | "loading" | "error">("idle");
@@ -34,7 +35,7 @@ function SignInForm() {
       return;
     }
     setStatus("sent");
-    setMessage("Check your inbox for a sign-in link.");
+    setMessage("Check your inbox for a link to sign in or finish setting up your account.");
   }
 
   async function onPasswordSubmit(e: React.FormEvent) {
@@ -55,7 +56,9 @@ function SignInForm() {
     });
     if (result?.error) {
       setPwStatus("error");
-      setPwMessage("Invalid email or password, or you haven’t set a password yet.");
+      setPwMessage(
+        "Couldn’t sign you in with that email and password. New here? Use the email link above to sign up or sign in first.",
+      );
       return;
     }
     setPwStatus("idle");
@@ -65,17 +68,16 @@ function SignInForm() {
 
   return (
     <main className="mx-auto w-full max-w-md px-4 py-16 sm:px-6">
-      <h1 className="mb-2 text-2xl font-bold text-[var(--quiz-text-primary)]">Sign in</h1>
-      <p className="mb-8 text-sm text-[var(--quiz-text-secondary)]">
-        Use a magic link, or sign in with a password if you&apos;ve added one on{" "}
-        <Link href="/profile/edit" className="font-medium text-[var(--quiz-brand-600)] hover:underline">
-          Edit profile
-        </Link>
-        .
+      <h1 className="mb-2 text-2xl font-bold text-[var(--quiz-text-primary)]">
+        Sign in or create an account
+      </h1>
+      <p className="mb-8 text-sm leading-relaxed text-[var(--quiz-text-secondary)]">
+        Enter your email and we&apos;ll send you a link to sign in or get started—no password
+        required.
       </p>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--quiz-text-primary)]">
-          Email
+          Email me a sign-in link
           <input
             type="email"
             name="email"
@@ -92,8 +94,20 @@ function SignInForm() {
           disabled={status === "loading" || pwStatus === "loading"}
           className="rounded-xl bg-gradient-to-r from-[var(--quiz-brand-500)] to-[var(--quiz-brand-600)] px-4 py-3 text-sm font-bold text-white shadow-[var(--quiz-glow)] transition-all hover:from-[var(--quiz-brand-600)] hover:to-[var(--quiz-brand-700)] disabled:opacity-60"
         >
-          {status === "loading" ? "Sending…" : "Email me a link"}
+          {status === "loading" ? "Sending…" : "Send link to my email"}
         </button>
+        <p className="text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setShowPasswordSignIn((v) => !v);
+              setPwMessage(null);
+            }}
+            className="text-sm font-medium text-[var(--quiz-brand-600)] hover:underline"
+          >
+            {showPasswordSignIn ? "Use email link instead" : "Sign in"}
+          </button>
+        </p>
       </form>
       {message ? (
         <p
@@ -103,40 +117,34 @@ function SignInForm() {
         </p>
       ) : null}
 
-      <div className="relative my-10">
-        <div className="absolute inset-0 flex items-center" aria-hidden>
-          <div className="w-full border-t border-[var(--quiz-border)]" />
-        </div>
-        <div className="relative flex justify-center text-xs font-medium uppercase tracking-wide">
-          <span className="bg-[var(--quiz-background)] px-3 text-[var(--quiz-muted)]">or</span>
-        </div>
-      </div>
-
-      <form onSubmit={onPasswordSubmit} className="flex flex-col gap-4">
-        <p className="text-sm font-medium text-[var(--quiz-text-primary)]">
-          Sign in with password
-        </p>
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--quiz-text-primary)]">
-          Password
-          <input
-            type="password"
-            name="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-surface)] px-4 py-3 text-[var(--quiz-text-primary)] outline-none ring-[var(--quiz-brand-500)]/30 transition-shadow focus:ring-2"
-            placeholder="••••••••"
-            disabled={pwStatus === "loading"}
-          />
-        </label>
-        <button
-          type="submit"
-          disabled={pwStatus === "loading" || status === "loading"}
-          className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-3 text-sm font-bold text-[var(--quiz-text-primary)] transition-colors hover:bg-[var(--quiz-surface)] disabled:opacity-60"
-        >
-          {pwStatus === "loading" ? "Signing in…" : "Sign in with password"}
-        </button>
-      </form>
+      {showPasswordSignIn ? (
+        <form onSubmit={onPasswordSubmit} className="mt-6 flex flex-col gap-4 border-t border-[var(--quiz-border)] pt-6">
+          <p className="text-xs leading-relaxed text-[var(--quiz-text-secondary)]">
+            If you already use a password with this account, enter it below. The email above is
+            used for both options.
+          </p>
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--quiz-text-primary)]">
+            Password
+            <input
+              type="password"
+              name="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-surface)] px-4 py-3 text-[var(--quiz-text-primary)] outline-none ring-[var(--quiz-brand-500)]/30 transition-shadow focus:ring-2"
+              placeholder="••••••••"
+              disabled={pwStatus === "loading"}
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={pwStatus === "loading" || status === "loading"}
+            className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-3 text-sm font-bold text-[var(--quiz-text-primary)] transition-colors hover:bg-[var(--quiz-surface)] disabled:opacity-60"
+          >
+            {pwStatus === "loading" ? "Signing in…" : "Sign in with password"}
+          </button>
+        </form>
+      ) : null}
       {pwMessage ? (
         <p
           className={`mt-4 text-sm ${pwStatus === "error" ? "text-red-600 dark:text-red-400" : "text-[var(--quiz-text-secondary)]"}`}
