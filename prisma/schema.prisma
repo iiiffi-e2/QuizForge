@@ -10,17 +10,19 @@ datasource db {
 }
 
 model User {
-  id             String          @id @default(cuid())
-  name           String?
-  email          String?         @unique
-  emailVerified  DateTime?
-  image          String?
-  passwordHash   String?
-  accounts       Account[]
-  sessions       Session[]
-  authenticators Authenticator[]
-  savedQuizzes   SavedQuiz[]
-  quizAttempts   QuizAttempt[]
+  id                     String                 @id @default(cuid())
+  name                   String?
+  email                  String?                @unique
+  emailVerified          DateTime?
+  image                  String?
+  passwordHash           String?
+  accounts               Account[]
+  sessions               Session[]
+  authenticators         Authenticator[]
+  savedQuizzes           SavedQuiz[]
+  quizAttempts           QuizAttempt[]
+  ownedAssignments       Assignment[]
+  assignmentSubmissions  AssignmentSubmission[]
 }
 
 model Account {
@@ -74,13 +76,14 @@ model Authenticator {
 }
 
 model SavedQuiz {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title     String
-  session   Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  session     Json
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  assignments Assignment[]
 
   @@index([userId, createdAt])
 }
@@ -97,4 +100,44 @@ model QuizAttempt {
 
   @@unique([userId, idempotencyKey])
   @@index([userId, completedAt])
+}
+
+enum AssignmentStatus {
+  ACTIVE
+  CLOSED
+}
+
+model Assignment {
+  id                String                 @id @default(cuid())
+  publicId          String                 @unique
+  joinCode          String                 @unique @db.VarChar(16)
+  ownerId           String
+  owner             User                   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title             String                 @db.VarChar(200)
+  quizSnapshot      Json
+  sourceSavedQuizId String?
+  sourceSavedQuiz   SavedQuiz?             @relation(fields: [sourceSavedQuizId], references: [id], onDelete: SetNull)
+  status            AssignmentStatus       @default(ACTIVE)
+  createdAt         DateTime               @default(now())
+  closedAt          DateTime?
+  submissions       AssignmentSubmission[]
+
+  @@index([ownerId, createdAt])
+}
+
+model AssignmentSubmission {
+  id             String     @id @default(cuid())
+  assignmentId   String
+  assignment     Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName    String?    @db.VarChar(80)
+  score          Int
+  questionCount  Int
+  completedAt    DateTime   @default(now())
+  idempotencyKey String     @db.VarChar(128)
+
+  @@unique([assignmentId, idempotencyKey])
+  @@unique([assignmentId, userId])
+  @@index([assignmentId, completedAt])
 }
