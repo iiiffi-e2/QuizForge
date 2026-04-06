@@ -107,12 +107,20 @@ export function Navbar() {
 
           <div className="hidden items-center gap-2 sm:flex sm:gap-4">
             {status === "authenticated" ? (
-              <Link
-                href="/profile"
-                className="text-sm font-semibold text-[var(--quiz-brand-600)] transition-colors hover:text-[var(--quiz-brand-700)]"
-              >
-                Profile
-              </Link>
+              <>
+                <Link
+                  href="/profile"
+                  className="text-sm font-semibold text-[var(--quiz-brand-600)] transition-colors hover:text-[var(--quiz-brand-700)]"
+                >
+                  Profile
+                </Link>
+                <Link
+                  href="/assignments"
+                  className="text-sm font-semibold text-[var(--quiz-brand-600)] transition-colors hover:text-[var(--quiz-brand-700)]"
+                >
+                  Assignments
+                </Link>
+              </>
             ) : null}
             <Link
               href="/create"
@@ -226,13 +234,22 @@ export function Navbar() {
         >
           <div className="mx-auto flex max-w-7xl flex-col gap-1">
             {status === "authenticated" ? (
-              <Link
-                href="/profile"
-                className="rounded-lg px-3 py-3 text-base font-semibold text-[var(--quiz-brand-600)] transition-colors hover:bg-[var(--quiz-border)]/30 hover:text-[var(--quiz-brand-700)]"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Profile
-              </Link>
+              <>
+                <Link
+                  href="/profile"
+                  className="rounded-lg px-3 py-3 text-base font-semibold text-[var(--quiz-brand-600)] transition-colors hover:bg-[var(--quiz-border)]/30 hover:text-[var(--quiz-brand-700)]"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Profile
+                </Link>
+                <Link
+                  href="/assignments"
+                  className="rounded-lg px-3 py-3 text-base font-semibold text-[var(--quiz-brand-600)] transition-colors hover:bg-[var(--quiz-border)]/30 hover:text-[var(--quiz-brand-700)]"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Assignments
+                </Link>
+              </>
             ) : null}
             <Link
               href="/create"

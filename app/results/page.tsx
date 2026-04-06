@@ -51,6 +51,9 @@ export default function ResultsPage() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
   const [attemptPersistError, setAttemptPersistError] = useState<string | null>(null);
+  const [assignmentPersistError, setAssignmentPersistError] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!session || session.quiz.questions.length === 0) {
@@ -59,24 +62,79 @@ export default function ResultsPage() {
   }, [router, session]);
 
   useEffect(() => {
-    if (!session || authStatus !== "authenticated") return;
-    const doneKey = `quizforge-attempt-done-${session.created_at}`;
-    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(doneKey)) {
-      return;
-    }
-    const idemStorageKey = `quizforge-attempt-idem-${session.created_at}`;
-    let idempotencyKey: string | null = null;
-    if (typeof sessionStorage !== "undefined") {
-      idempotencyKey = sessionStorage.getItem(idemStorageKey);
-      if (!idempotencyKey) {
-        idempotencyKey = crypto.randomUUID();
-        sessionStorage.setItem(idemStorageKey, idempotencyKey);
-      }
-    } else {
-      idempotencyKey = crypto.randomUUID();
-    }
+    if (!session || session.quiz.questions.length === 0) return;
+
     let cancelled = false;
+
     void (async () => {
+      const ss = typeof sessionStorage !== "undefined" ? sessionStorage : null;
+      const publicId = ss?.getItem("quizforge-assignment-public-id") ?? null;
+
+      if (publicId && ss) {
+        const doneKey = `quizforge-assignment-done-${publicId}`;
+        if (!ss.getItem(doneKey)) {
+          const idemKey = `quizforge-assignment-idem-${publicId}`;
+          let idem = ss.getItem(idemKey);
+          if (!idem) {
+            idem = crypto.randomUUID();
+            ss.setItem(idemKey, idem);
+          }
+
+          const guestName = ss.getItem(`quizforge-assignment-guest-${publicId}`);
+          const body: Record<string, unknown> = {
+            publicId,
+            answers,
+            idempotencyKey: idem,
+          };
+          if (authStatus !== "authenticated" && guestName?.trim()) {
+            body.displayName = guestName.trim();
+          }
+
+          try {
+            const res = await fetch("/api/assignment-submissions", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            });
+            if (cancelled) return;
+            if (res.ok || res.status === 200 || res.status === 201) {
+              ss.setItem(doneKey, "1");
+            } else {
+              const data = (await res.json()) as { error?: string };
+              setAssignmentPersistError(
+                typeof data.error === "string"
+                  ? data.error
+                  : "Could not record your class quiz result.",
+              );
+            }
+          } catch {
+            if (!cancelled) {
+              setAssignmentPersistError(
+                "Could not record your class quiz result.",
+              );
+            }
+          }
+        }
+      }
+
+      if (authStatus !== "authenticated") return;
+
+      const doneKey = `quizforge-attempt-done-${session.created_at}`;
+      if (ss?.getItem(doneKey)) {
+        return;
+      }
+      const idemStorageKey = `quizforge-attempt-idem-${session.created_at}`;
+      let idempotencyKey: string | null = null;
+      if (ss) {
+        idempotencyKey = ss.getItem(idemStorageKey);
+        if (!idempotencyKey) {
+          idempotencyKey = crypto.randomUUID();
+          ss.setItem(idemStorageKey, idempotencyKey);
+        }
+      } else {
+        idempotencyKey = crypto.randomUUID();
+      }
+
       try {
         const res = await fetch("/api/quiz-attempts", {
           method: "POST",
@@ -85,8 +143,8 @@ export default function ResultsPage() {
         });
         if (cancelled) return;
         if (res.ok) {
-          if (typeof sessionStorage !== "undefined") {
-            sessionStorage.setItem(doneKey, "1");
+          if (ss) {
+            ss.setItem(doneKey, "1");
           }
         } else {
           const data = (await res.json()) as { error?: string };
@@ -104,6 +162,7 @@ export default function ResultsPage() {
         }
       }
     })();
+
     return () => {
       cancelled = true;
     };
@@ -354,6 +413,11 @@ export default function ResultsPage() {
           ) : null}
           {saveError ? (
             <p className="mt-3 text-sm font-medium text-[var(--quiz-error)]">{saveError}</p>
+          ) : null}
+          {assignmentPersistError ? (
+            <p className="mt-3 text-sm font-medium text-[var(--quiz-error)]" role="status">
+              {assignmentPersistError}
+            </p>
           ) : null}
           {attemptPersistError ? (
             <p className="mt-3 text-sm font-medium text-[var(--quiz-error)]" role="status">

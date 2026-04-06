@@ -1,6 +1,6 @@
 # Class assignments & tracked sharing — design spec
 
-**Status:** Approved — implementation plan: [2026-04-06-class-assignments-tracking.md](../plans/2026-04-06-class-assignments-tracking.md)  
+**Status:** Implemented (MVP) — plan: [2026-04-06-class-assignments-tracking.md](../plans/2026-04-06-class-assignments-tracking.md)  
 **Date:** 2026-04-06  
 **Depends on:** [Profile dashboard & quiz attempts](2026-04-04-profile-dashboard-design.md) (`QuizAttempt`, `/profile`), [Accounts & persistence](2026-04-04-accounts-persistence-design.md) (`User`, `SavedQuiz`), existing share flows (Redis short links, `QuizSession` JSON)
 

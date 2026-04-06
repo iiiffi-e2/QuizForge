@@ -72,6 +72,9 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
   const [embedPendingId, setEmbedPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [assignmentPendingId, setAssignmentPendingId] = useState<string | null>(
+    null,
+  );
   const [toast, setToast] = useState<string | null>(null);
   const toastClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -192,6 +195,41 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
     }
   }
 
+  async function createClassAssignment(id: string) {
+    setError(null);
+    setAssignmentPendingId(id);
+    try {
+      const res = await fetch("/api/assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ savedQuizId: id }),
+      });
+      const data = (await res.json()) as {
+        assignmentUrl?: string;
+        joinCode?: string;
+        error?: string;
+      };
+      if (!res.ok) {
+        setError(data.error ?? "Could not create assignment.");
+        return;
+      }
+      if (data.assignmentUrl && typeof navigator.clipboard?.writeText === "function") {
+        const block =
+          data.joinCode != null
+            ? `${data.assignmentUrl}\nJoin code: ${data.joinCode}`
+            : data.assignmentUrl;
+        await navigator.clipboard.writeText(block);
+        showToast("Assignment link and code copied");
+      } else {
+        showToast("Assignment created — copy from Assignments page");
+      }
+    } catch {
+      setError("Could not create assignment.");
+    } finally {
+      setAssignmentPendingId(null);
+    }
+  }
+
   async function deleteSaved(id: string) {
     setError(null);
     setPendingId(id);
@@ -213,7 +251,11 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
     }
   }
 
-  const busy = pendingId !== null || sharePendingId !== null || embedPendingId !== null;
+  const busy =
+    pendingId !== null ||
+    sharePendingId !== null ||
+    embedPendingId !== null ||
+    assignmentPendingId !== null;
 
   return (
     <div className="relative">
@@ -287,6 +329,14 @@ export function LibraryClient({ initialItems }: { initialItems: LibraryItem[] })
                   className="rounded-lg border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80 disabled:opacity-60"
                 >
                   {embedPendingId === item.id ? "Copying…" : "Embed code"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void createClassAssignment(item.id)}
+                  disabled={busy}
+                  className="rounded-lg border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-4 py-2 text-sm font-semibold text-[var(--quiz-text-primary)] transition-colors hover:opacity-80 disabled:opacity-60"
+                >
+                  {assignmentPendingId === item.id ? "Creating…" : "Class assignment"}
                 </button>
                 {confirmDeleteId === item.id ? (
                   <>

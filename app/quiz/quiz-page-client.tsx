@@ -15,7 +15,15 @@ import { fetchSharedQuizById } from "@/lib/share-client";
 import { decodeQuizFromUrl } from "@/lib/share";
 import { QuizSession } from "@/lib/types";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+
+const ASSIGNMENT_PUBLIC_KEY = "quizforge-assignment-public-id";
+
+function clearAssignmentContext(): void {
+  if (typeof sessionStorage === "undefined") return;
+  sessionStorage.removeItem(ASSIGNMENT_PUBLIC_KEY);
+}
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -28,8 +36,11 @@ type LoadStatus = "loading" | "ready" | "error";
 export function QuizPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: authData, status: authStatus } = useSession();
   const sid = searchParams.get("sid");
   const qParam = searchParams.get("q");
+  const aid = searchParams.get("aid");
+  const classCode = searchParams.get("code");
   const embedParam = searchParams.get("embed");
   const isEmbed =
     embedParam === "1" ||
@@ -44,10 +55,17 @@ export function QuizPageClient() {
   const [answers, setAnswers] = useState<number[]>([]);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
+  const [guestGate, setGuestGate] = useState<{
+    publicId: string;
+    session: QuizSession;
+  } | null>(null);
+  const [guestNameInput, setGuestNameInput] = useState("");
+
   useEffect(() => {
     let cancelled = false;
 
     function applySession(next: QuizSession | null) {
+      setGuestGate(null);
       setSession(next);
       if (next) {
         setAnswers(loadUserAnswers(next.quiz.questions.length));
@@ -58,9 +76,97 @@ export function QuizPageClient() {
       }
     }
 
+    async function loadAssignmentPlay(publicId: string): Promise<boolean> {
+      const res = await fetch(
+        `/api/assignments/public/${encodeURIComponent(publicId)}`,
+      );
+      const data = (await res.json()) as {
+        session?: QuizSession;
+        publicId?: string;
+        error?: string;
+      };
+      if (cancelled) return false;
+      if (!res.ok) {
+        setLoadError(data.error ?? "Assignment not found.");
+        setLoadStatus("error");
+        applySession(null);
+        return false;
+      }
+      if (!data.session?.quiz?.questions?.length) {
+        setLoadError("Assignment not found.");
+        setLoadStatus("error");
+        applySession(null);
+        return false;
+      }
+
+      const user = authStatus === "authenticated" ? authData?.user : undefined;
+      if (!user) {
+        const gk = `quizforge-assignment-guest-${publicId}`;
+        const stored =
+          typeof sessionStorage !== "undefined"
+            ? sessionStorage.getItem(gk)?.trim()
+            : "";
+        if (!stored) {
+          setGuestGate({ publicId, session: data.session });
+          setLoadStatus("ready");
+          setSession(null);
+          setAnswers([]);
+          setTimeLeft(null);
+          return false;
+        }
+      }
+
+      if (typeof sessionStorage !== "undefined") {
+        sessionStorage.setItem(ASSIGNMENT_PUBLIC_KEY, publicId);
+      }
+      saveQuizSession(data.session);
+      saveUserAnswers(new Array(data.session.quiz.questions.length).fill(-1));
+      applySession(data.session);
+      setLoadStatus("ready");
+      return true;
+    }
+
     async function resolveSession() {
       setLoadStatus("loading");
       setLoadError(null);
+      setGuestGate(null);
+
+      if (aid?.trim()) {
+        if (authStatus === "loading") {
+          setLoadStatus("loading");
+          return;
+        }
+        await loadAssignmentPlay(aid.trim());
+        return;
+      }
+
+      if (classCode?.trim()) {
+        if (authStatus === "loading") {
+          setLoadStatus("loading");
+          return;
+        }
+        const r = await fetch(
+          `/api/assignments/resolve-code?code=${encodeURIComponent(classCode.trim())}`,
+        );
+        const resolved = (await r.json()) as { publicId?: string; error?: string };
+        if (cancelled) return;
+        if (!r.ok) {
+          setLoadError(resolved.error ?? "Assignment not found.");
+          setLoadStatus("error");
+          applySession(null);
+          return;
+        }
+        if (!resolved.publicId?.trim()) {
+          setLoadError("Assignment not found.");
+          setLoadStatus("error");
+          applySession(null);
+          return;
+        }
+        await loadAssignmentPlay(resolved.publicId.trim());
+        return;
+      }
+
+      clearAssignmentContext();
 
       if (sid) {
         const result = await fetchSharedQuizById(sid);
@@ -99,15 +205,38 @@ export function QuizPageClient() {
     return () => {
       cancelled = true;
     };
-  }, [sid, qParam]);
+    // Assignment load only needs stable user identity + auth phase, not full session object identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
+  }, [sid, qParam, aid, classCode, authStatus, authData?.user?.id]);
+
+  const confirmGuestName = useCallback(() => {
+    if (!guestGate) return;
+    const t = guestNameInput.trim();
+    if (!t) return;
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem(
+        `quizforge-assignment-guest-${guestGate.publicId}`,
+        t,
+      );
+      sessionStorage.setItem(ASSIGNMENT_PUBLIC_KEY, guestGate.publicId);
+    }
+    saveQuizSession(guestGate.session);
+    saveUserAnswers(new Array(guestGate.session.quiz.questions.length).fill(-1));
+    setGuestGate(null);
+    setSession(guestGate.session);
+    setAnswers(loadUserAnswers(guestGate.session.quiz.questions.length));
+    setTimeLeft(guestGate.session.request.settings.time_limit_seconds ?? null);
+    setCurrentIndex(0);
+  }, [guestGate, guestNameInput]);
 
   useEffect(() => {
     if (loadStatus !== "ready") return;
+    if (guestGate) return;
     if (isEmbed) return;
     if (!session || session.quiz.questions.length === 0) {
       router.replace("/");
     }
-  }, [loadStatus, router, session, isEmbed]);
+  }, [loadStatus, router, session, isEmbed, guestGate]);
 
   const progress = useMemo(() => {
     if (!session) return 0;
@@ -255,6 +384,41 @@ export function QuizPageClient() {
             primaryText="Loading quiz..."
             secondaryText="Preparing your questions."
           />
+        </main>
+      </div>
+    );
+  }
+
+  if (guestGate) {
+    return (
+      <div className={shellClass}>
+        {Nav}
+        <main className="mx-auto max-w-md px-4 py-10 sm:px-6">
+          <h1 className="text-lg font-semibold text-[var(--quiz-text-primary)]">
+            Class quiz
+          </h1>
+          <p className="mt-2 text-sm text-[var(--quiz-text-secondary)]">
+            Enter your name as it should appear to your teacher.
+          </p>
+          <label className="mt-4 block text-sm font-medium text-[var(--quiz-text-primary)]">
+            Your name
+            <input
+              type="text"
+              value={guestNameInput}
+              onChange={(e) => setGuestNameInput(e.target.value)}
+              maxLength={80}
+              className="mt-1.5 w-full rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-card)] px-3 py-2.5 text-[var(--quiz-text-primary)]"
+              autoComplete="name"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={confirmGuestName}
+            disabled={!guestNameInput.trim()}
+            className="mt-4 w-full rounded-xl bg-[var(--quiz-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--quiz-secondary)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Continue
+          </button>
         </main>
       </div>
     );
