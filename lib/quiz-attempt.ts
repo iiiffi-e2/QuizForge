@@ -23,6 +23,22 @@ function isValidChoiceIndex(value: unknown): boolean {
   return value >= -1 && value <= 3;
 }
 
+export function parseAnswersForSession(session: QuizSession, answers: unknown): number[] {
+  if (!Array.isArray(answers)) {
+    throw new Error("answers must be an array.");
+  }
+  const n = session.quiz.questions.length;
+  if (answers.length !== n) {
+    throw new Error("answers length must match number of questions.");
+  }
+  for (const a of answers) {
+    if (!isValidChoiceIndex(a)) {
+      throw new Error("Each answer must be an integer from -1 to 3.");
+    }
+  }
+  return answers as number[];
+}
+
 export function parseQuizAttemptPayload(
   input: QuizAttemptPayloadInput,
 ): ParsedQuizAttemptPayload {
@@ -39,27 +55,16 @@ export function parseQuizAttemptPayload(
   assertValidQuizSessionForSave(rawSession);
   const session = rawSession;
 
-  if (!Array.isArray(rawAnswers)) {
-    throw new Error("answers must be an array.");
-  }
-  const n = session.quiz.questions.length;
-  if (rawAnswers.length !== n) {
-    throw new Error("answers length must match number of questions.");
-  }
-  for (const a of rawAnswers) {
-    if (!isValidChoiceIndex(a)) {
-      throw new Error("Each answer must be an integer from -1 to 3.");
-    }
-  }
-  const answers = rawAnswers as number[];
+  const answers = parseAnswersForSession(session, rawAnswers);
 
   const score = getScore(session.quiz.questions, answers);
   const title = deriveDefaultTitle(session.request);
+  const questionCount = session.quiz.questions.length;
 
   return {
     session,
     score,
-    questionCount: n,
+    questionCount,
     title: title.slice(0, 200),
     idempotencyKey,
   };

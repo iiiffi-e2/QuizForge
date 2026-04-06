@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseQuizAttemptPayload } from "./quiz-attempt";
+import { parseAnswersForSession, parseQuizAttemptPayload } from "./quiz-attempt";
 import type { QuizSession } from "./types";
 import { getScore } from "./utils";
 
@@ -38,6 +38,18 @@ function minimalSession(): QuizSession {
     created_at: new Date().toISOString(),
   };
 }
+
+describe("parseAnswersForSession", () => {
+  it("throws when answers length mismatches questions", () => {
+    const session = minimalSession();
+    expect(() => parseAnswersForSession(session, [0])).toThrow(/answers/i);
+  });
+
+  it("returns parsed answers on success", () => {
+    const session = minimalSession();
+    expect(parseAnswersForSession(session, [1, 2])).toEqual([1, 2]);
+  });
+});
 
 describe("parseQuizAttemptPayload", () => {
   it("returns score matching getScore for valid payload", () => {
