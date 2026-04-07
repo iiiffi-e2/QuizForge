@@ -134,6 +134,8 @@ model AssignmentSubmission {
   displayName    String?    @db.VarChar(80)
   score          Int
   questionCount  Int
+  /** Parallel to quiz questions: selected choice index per question (-1 = unanswered). */
+  answers        Json?
   completedAt    DateTime   @default(now())
   idempotencyKey String     @db.VarChar(128)
 

@@ -11,7 +11,9 @@ export type AssignmentListItem = {
   title: string;
   status: string;
   createdAt: string;
+  closedAt: string | null;
   submissionCount: number;
+  questionCount: number | null;
 };
 
 export function AssignmentsListClient({
@@ -121,20 +123,67 @@ export function AssignmentsListClient({
           return (
             <li
               key={item.id}
-              className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-surface)]/80 p-4"
+              className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-surface)]/80 p-4 sm:p-5"
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="font-semibold text-[var(--quiz-text-primary)]">
-                    {item.title}
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-[var(--quiz-text-primary)]">
+                      {item.title}
+                    </p>
+                    <span
+                      className={
+                        item.status === "ACTIVE"
+                          ? "rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400"
+                          : "rounded-full bg-[var(--quiz-border)]/80 px-2.5 py-0.5 text-xs font-semibold text-[var(--quiz-text-secondary)]"
+                      }
+                    >
+                      {item.status === "ACTIVE" ? "Open" : "Closed"}
+                    </span>
+                  </div>
+                  <dl className="grid gap-1 text-xs text-[var(--quiz-text-secondary)] sm:grid-cols-2 sm:gap-x-6">
+                    <div>
+                      <dt className="inline font-medium text-[var(--quiz-text-primary)]/80">
+                        Created:{" "}
+                      </dt>
+                      <dd className="inline">
+                        {new Date(item.createdAt).toLocaleString()}
+                      </dd>
+                    </div>
+                    {item.closedAt ? (
+                      <div>
+                        <dt className="inline font-medium text-[var(--quiz-text-primary)]/80">
+                          Closed:{" "}
+                        </dt>
+                        <dd className="inline">
+                          {new Date(item.closedAt).toLocaleString()}
+                        </dd>
+                      </div>
+                    ) : null}
+                    <div>
+                      <dt className="inline font-medium text-[var(--quiz-text-primary)]/80">
+                        Questions:{" "}
+                      </dt>
+                      <dd className="inline">
+                        {item.questionCount != null ? item.questionCount : "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-medium text-[var(--quiz-text-primary)]/80">
+                        Submissions:{" "}
+                      </dt>
+                      <dd className="inline">{item.submissionCount}</dd>
+                    </div>
+                  </dl>
+                  <p className="font-mono text-sm text-[var(--quiz-text-secondary)]">
+                    Join code:{" "}
+                    <span className="text-[var(--quiz-text-primary)]">
+                      {item.joinCode}
+                    </span>
                   </p>
                   <p className="text-xs text-[var(--quiz-text-secondary)]">
-                    {new Date(item.createdAt).toLocaleString()} ·{" "}
-                    {item.submissionCount} submission
-                    {item.submissionCount === 1 ? "" : "s"} · {item.status}
-                  </p>
-                  <p className="mt-2 font-mono text-sm text-[var(--quiz-text-secondary)]">
-                    Code: {item.joinCode}
+                    Students can open your assignment link or enter this code on the
+                    home or create page.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">

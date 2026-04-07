@@ -44,6 +44,7 @@ describe("gradeQuizSnapshot", () => {
     const r = gradeQuizSnapshot(session, [1, 2]);
     expect(r.questionCount).toBe(2);
     expect(r.score).toBe(2);
+    expect(r.answers).toEqual([1, 2]);
   });
 
   it("throws when answers length mismatches", () => {

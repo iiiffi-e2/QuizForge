@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AssignmentsListClient } from "@/components/AssignmentsListClient";
 import { Navbar } from "@/components/Navbar";
+import { extractQuestionCountFromSnapshot } from "@/lib/assignment-snapshot-meta";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -21,6 +22,8 @@ export default async function AssignmentsPage() {
       title: true,
       status: true,
       createdAt: true,
+      closedAt: true,
+      quizSnapshot: true,
       _count: { select: { submissions: true } },
     },
   });
@@ -51,7 +54,9 @@ export default async function AssignmentsPage() {
             title: i.title,
             status: i.status,
             createdAt: i.createdAt.toISOString(),
+            closedAt: i.closedAt?.toISOString() ?? null,
             submissionCount: i._count.submissions,
+            questionCount: extractQuestionCountFromSnapshot(i.quizSnapshot),
           }))}
         />
       </main>

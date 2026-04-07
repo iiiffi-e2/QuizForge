@@ -81,7 +81,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  let graded: { score: number; questionCount: number };
+  let graded: { score: number; questionCount: number; answers: number[] };
   try {
     graded = gradeQuizSnapshot(assignment.quizSnapshot, b.answers);
   } catch (e) {
@@ -126,6 +126,7 @@ export async function POST(request: Request) {
         displayName,
         score: graded.score,
         questionCount: graded.questionCount,
+        answers: graded.answers,
         idempotencyKey,
       },
     });

@@ -6,6 +6,7 @@ import { getScore } from "@/lib/utils";
 export function gradeQuizSnapshot(snapshot: unknown, answers: unknown): {
   score: number;
   questionCount: number;
+  answers: number[];
 } {
   assertValidQuizSessionForSave(snapshot);
   const session = snapshot as QuizSession;
@@ -13,5 +14,6 @@ export function gradeQuizSnapshot(snapshot: unknown, answers: unknown): {
   return {
     score: getScore(session.quiz.questions, parsed),
     questionCount: session.quiz.questions.length,
+    answers: parsed,
   };
 }

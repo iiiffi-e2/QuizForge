@@ -8,6 +8,7 @@ import {
   assertValidQuizSessionForSave,
   deriveDefaultTitle,
 } from "@/lib/saved-quiz";
+import { extractQuestionCountFromSnapshot } from "@/lib/assignment-snapshot-meta";
 import type { QuizSession } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +30,7 @@ export async function GET() {
       status: true,
       createdAt: true,
       closedAt: true,
+      quizSnapshot: true,
       _count: { select: { submissions: true } },
     },
   });
@@ -43,6 +45,7 @@ export async function GET() {
       createdAt: r.createdAt.toISOString(),
       closedAt: r.closedAt?.toISOString() ?? null,
       submissionCount: r._count.submissions,
+      questionCount: extractQuestionCountFromSnapshot(r.quizSnapshot),
     })),
   });
 }
