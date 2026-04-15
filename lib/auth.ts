@@ -3,6 +3,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Resend from "next-auth/providers/resend";
 import bcrypt from "bcryptjs";
+import { sendResendMagicLink } from "@/lib/auth-resend-magic-link";
 import { prisma } from "@/lib/prisma";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -15,6 +16,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Resend({
       apiKey: process.env.RESEND_API_KEY,
       from: process.env.AUTH_EMAIL_FROM,
+      sendVerificationRequest: sendResendMagicLink,
     }),
     Credentials({
       id: "credentials",
