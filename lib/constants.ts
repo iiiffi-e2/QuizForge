@@ -1,5 +1,6 @@
 import {
   Difficulty,
+  QUESTION_COUNT_VALUES,
   QuizGenerationRequest,
   Level,
   QuizInputType,
@@ -43,7 +44,9 @@ export function tabIdToInputType(
   return tabId;
 }
 
-export const QUESTION_COUNTS: QuizSettings["question_count"][] = [5, 10, 15, 20];
+export const QUESTION_COUNTS: QuizSettings["question_count"][] = [
+  ...QUESTION_COUNT_VALUES,
+];
 
 export const DIFFICULTIES: Array<{ value: Difficulty; label: string }> = [
   { value: "easy", label: "Easy" },

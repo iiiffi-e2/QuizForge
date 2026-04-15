@@ -13,8 +13,14 @@ export type QuizMode = "study" | "test";
 
 export type SourceBehavior = "material_only" | "material_plus_general";
 
+export const QUESTION_COUNT_VALUES = [
+  5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100,
+] as const;
+
+export type QuestionCount = (typeof QUESTION_COUNT_VALUES)[number];
+
 export interface QuizSettings {
-  question_count: 5 | 10 | 15 | 20;
+  question_count: QuestionCount;
   difficulty: Difficulty;
   level: Level;
   mode: QuizMode;

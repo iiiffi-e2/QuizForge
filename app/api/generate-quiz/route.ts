@@ -15,7 +15,12 @@ import {
   hasImageUploadData,
   parseImageUploadContent,
 } from "@/lib/image-upload-payload";
-import { QuizGenerationRequest, QuizPayload, QuizQuestion } from "@/lib/types";
+import {
+  QUESTION_COUNT_VALUES,
+  QuizGenerationRequest,
+  QuizPayload,
+  QuizQuestion,
+} from "@/lib/types";
 import { normalizeText } from "@/lib/utils";
 
 const MAX_NORMALIZED_LENGTH = 12000;
@@ -162,9 +167,9 @@ function validateRequest(body: Partial<QuizGenerationRequest>): string | null {
     return "Unsupported input_type.";
   }
 
-  const validQuestionCounts = new Set([5, 10, 15, 20]);
+  const validQuestionCounts = new Set<number>(QUESTION_COUNT_VALUES);
   if (!validQuestionCounts.has(body.settings.question_count as number)) {
-    return "question_count must be one of 5, 10, 15, 20.";
+    return `question_count must be one of ${QUESTION_COUNT_VALUES.join(", ")}.`;
   }
 
   const validDifficulty = new Set(["easy", "medium", "hard"]);
