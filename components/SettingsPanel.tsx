@@ -6,15 +6,21 @@ import {
   SOURCE_BEHAVIORS,
   TIME_LIMITS,
 } from "@/lib/constants";
-import { QuizSettings, QuizMode } from "@/lib/types";
+import { QuestionCount, QuizSettings, QuizMode } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface SettingsPanelProps {
   settings: QuizSettings;
   onChange: (next: QuizSettings) => void;
+  /** Defaults to full list (up to 100). Pass a guest-filtered list from `questionCountsForUser`. */
+  questionCountOptions?: QuestionCount[];
 }
 
-export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
+export function SettingsPanel({
+  settings,
+  onChange,
+  questionCountOptions = QUESTION_COUNTS,
+}: SettingsPanelProps) {
   const update = <K extends keyof QuizSettings>(key: K, value: QuizSettings[K]) => {
     onChange({ ...settings, [key]: value });
   };
@@ -42,12 +48,23 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
             }
             className="rounded-xl border border-[var(--quiz-border)] bg-[var(--quiz-background)] px-3 py-2.5 text-[var(--quiz-text-primary)] focus:border-[var(--quiz-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--quiz-ring)]"
           >
-            {QUESTION_COUNTS.map((count) => (
+            {questionCountOptions.map((count) => (
               <option key={count} value={count}>
                 {count} Questions
               </option>
             ))}
           </select>
+          {questionCountOptions.length < QUESTION_COUNTS.length ? (
+            <span className="text-xs leading-relaxed text-[var(--quiz-text-secondary)] sm:text-sm">
+              <a
+                href="/sign-in"
+                className="font-medium text-[var(--quiz-brand-600)] underline-offset-2 hover:underline"
+              >
+                Sign in
+              </a>{" "}
+              to generate up to 100 questions.
+            </span>
+          ) : null}
         </label>
 
         <label className="flex flex-col gap-1.5 text-sm">

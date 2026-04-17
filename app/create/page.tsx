@@ -5,7 +5,11 @@ import { InputTabs } from "@/components/InputTabs";
 import { LoadingState } from "@/components/LoadingState";
 import { Navbar } from "@/components/Navbar";
 import { SettingsPanel } from "@/components/SettingsPanel";
-import { DEFAULT_REQUEST } from "@/lib/constants";
+import {
+  DEFAULT_REQUEST,
+  GUEST_MAX_QUESTION_COUNT,
+  questionCountsForUser,
+} from "@/lib/constants";
 import { generateQuizFromApi } from "@/lib/api-client";
 import {
   hasImageUploadData,
@@ -21,6 +25,7 @@ import {
   saveUserAnswers,
 } from "@/lib/quiz-storage";
 import { QuizGenerationRequest, QuizInputType, QuizSession } from "@/lib/types";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -28,6 +33,7 @@ type LoadingStage = "extracting" | "generating";
 
 export default function CreateQuizPage() {
   const router = useRouter();
+  const { status: authStatus } = useSession();
   const [request, setRequest] = useState<QuizGenerationRequest>(() => ({
     ...DEFAULT_REQUEST,
     settings: { ...DEFAULT_REQUEST.settings },
@@ -43,6 +49,31 @@ export default function CreateQuizPage() {
       setRequest(stored);
     }
   }, []);
+
+  const questionCountOptions = useMemo(
+    () =>
+      questionCountsForUser(
+        authStatus === "loading" || authStatus === "authenticated",
+      ),
+    [authStatus],
+  );
+
+  useEffect(() => {
+    if (authStatus === "loading") return;
+    if (authStatus === "authenticated") return;
+    setRequest((previous) => {
+      if (previous.settings.question_count <= GUEST_MAX_QUESTION_COUNT) {
+        return previous;
+      }
+      return {
+        ...previous,
+        settings: {
+          ...previous.settings,
+          question_count: GUEST_MAX_QUESTION_COUNT,
+        },
+      };
+    });
+  }, [authStatus]);
 
   useEffect(() => {
     if (skipInitialSave.current) {
@@ -230,7 +261,11 @@ export default function CreateQuizPage() {
                 onInputError={setError}
               />
 
-              <SettingsPanel settings={request.settings} onChange={setSettings} />
+              <SettingsPanel
+                settings={request.settings}
+                onChange={setSettings}
+                questionCountOptions={questionCountOptions}
+              />
 
               {error ? (
                 <p className="mt-4 text-sm font-medium text-[var(--quiz-error)]">

@@ -15,6 +15,8 @@ import {
   hasImageUploadData,
   parseImageUploadContent,
 } from "@/lib/image-upload-payload";
+import { auth } from "@/lib/auth";
+import { GUEST_MAX_QUESTION_COUNT } from "@/lib/constants";
 import {
   QUESTION_COUNT_VALUES,
   QuizGenerationRequest,
@@ -119,7 +121,9 @@ const IMAGE_EXTRACTION_SCHEMA = {
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Partial<QuizGenerationRequest>;
-    const validationError = validateRequest(body);
+    const session = await auth();
+    const isLoggedIn = Boolean(session?.user?.id);
+    const validationError = validateRequest(body, isLoggedIn);
     if (validationError) {
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
@@ -156,7 +160,10 @@ export async function POST(request: Request) {
   }
 }
 
-function validateRequest(body: Partial<QuizGenerationRequest>): string | null {
+function validateRequest(
+  body: Partial<QuizGenerationRequest>,
+  isLoggedIn: boolean,
+): string | null {
   if (!body || typeof body !== "object") return "Invalid request payload.";
   if (!body.input_type) return "input_type is required.";
   if (!body.content || typeof body.content !== "string") return "content is required.";
@@ -167,9 +174,13 @@ function validateRequest(body: Partial<QuizGenerationRequest>): string | null {
     return "Unsupported input_type.";
   }
 
+  const count = body.settings.question_count as number;
   const validQuestionCounts = new Set<number>(QUESTION_COUNT_VALUES);
-  if (!validQuestionCounts.has(body.settings.question_count as number)) {
+  if (!validQuestionCounts.has(count)) {
     return `question_count must be one of ${QUESTION_COUNT_VALUES.join(", ")}.`;
+  }
+  if (!isLoggedIn && count > GUEST_MAX_QUESTION_COUNT) {
+    return `Sign in to generate quizzes with more than ${GUEST_MAX_QUESTION_COUNT} questions.`;
   }
 
   const validDifficulty = new Set(["easy", "medium", "hard"]);

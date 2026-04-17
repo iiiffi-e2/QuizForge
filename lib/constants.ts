@@ -1,6 +1,7 @@
 import {
   Difficulty,
   QUESTION_COUNT_VALUES,
+  QuestionCount,
   QuizGenerationRequest,
   Level,
   QuizInputType,
@@ -47,6 +48,21 @@ export function tabIdToInputType(
 export const QUESTION_COUNTS: QuizSettings["question_count"][] = [
   ...QUESTION_COUNT_VALUES,
 ];
+
+/** Max questions guests may select or generate without signing in. */
+export const GUEST_MAX_QUESTION_COUNT = 20;
+
+/**
+ * Dropdown options for question count. Guests only see counts up to
+ * {@link GUEST_MAX_QUESTION_COUNT}; signed-in users see the full list (up to 100).
+ * While auth is loading, pass `true` so a saved high count stays valid until status resolves.
+ */
+export function questionCountsForUser(allowFullRange: boolean): QuestionCount[] {
+  if (allowFullRange) return [...QUESTION_COUNT_VALUES];
+  return QUESTION_COUNT_VALUES.filter(
+    (n) => n <= GUEST_MAX_QUESTION_COUNT,
+  ) as QuestionCount[];
+}
 
 export const DIFFICULTIES: Array<{ value: Difficulty; label: string }> = [
   { value: "easy", label: "Easy" },
